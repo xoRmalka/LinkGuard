@@ -1,0 +1,13 @@
+node_modules/
+dist/
+.venv/
+__pycache__/
+*.pyc
+.env
+.env.*
+!.env.example
+*.db
+.DS_Store
+client/dist/
+server/linkguard.db
+server/.venv/
