@@ -39,7 +39,7 @@ Vite proxies `/api` → Flask, so the client can call `/api/v1/...` without CORS
 - Add `VITE_CLERK_PUBLISHABLE_KEY` to `client/.env.local` (or `.env`) and `CLERK_ISSUER` to `server/.env` (must equal the Dashboard **Frontend API URL** / JWT `iss`). If verification still fails, paste the **JWKS Public Key (PEM)** from Clerk → API keys into `CLERK_JWT_KEY` in `server/.env` (see `server/.env.example`). The client uses [`@clerk/react`](https://clerk.com/docs/react/getting-started/quickstart); `ClerkProvider` uses `import.meta.env.VITE_CLERK_PUBLISHABLE_KEY` (with Clerk’s bypass when the key is empty so guest mode still runs).
 - Set `DATABASE_URL` to your Neon connection string for Postgres. If omitted, SQLite `server/linkguard.db` is created automatically.
 
-**Admin (MVP):** promote a user to `admin` by updating the `users.role` column in the database after first sign-in.
+**Admin (MVP):** set **`public_metadata.role`** to **`admin`** on your user in the Clerk Dashboard (or via Backend API). Default **`user`** can be applied on first API hit. No `users.role` in Postgres—see `docs/clerk-auth-rollout-plan.md`.
 
 ## Guest limits
 

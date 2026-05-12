@@ -23,6 +23,7 @@ LinkGuard is a web application that helps users assess whether a URL is likely r
 | Contributor (MVP) | **Same capabilities as user**; `contributor` role reserved for future features (simplest RBAC). |
 | External APIs (phase 1) | **Google Safe Browsing + inner heuristics** first; URLhaus, VirusTotal, IPQualityScore, CheckPhish in **later phases** (wire with graceful degradation when keys exist). |
 | URL storage | Store **full normalized URL + host** in Neon for dashboards and history. |
+| Clerk roles | **`public_metadata.role`**: **`user`** \| **`admin`** in MVP (**`contributor`** later); lazy default **`user`** on first API hit; hybrid JWT + optional Clerk user fetch; no Neon `users.role` for authz. Details: `docs/clerk-auth-rollout-plan.md`. |
 
 ## Core product rules (non-negotiable)
 
@@ -38,7 +39,7 @@ LinkGuard is a web application that helps users assess whether a URL is likely r
 | **Contributor** | Same as user; role kept for future differentiation |
 | **Admin** | User list with roles, invite user, remove/deactivate user; optional moderation later |
 
-**Implementation:** Map Clerk `sub` to app `users` table with `role` enum. Server is the source of truth for role-gated mutations; client hides admin UI based on claims from backend.
+**Implementation:** **`public_metadata.role`** (`user` \| `admin` in MVP; **`contributor`** later) is the **only** source of truth for permissions—**not** stored on Neon `users`. Map Clerk `sub` to `users.id` for FKs and optional email cache. On **first authenticated API hit**, if **`role`** is missing, the **server** sets **`user`** via Clerk Backend API (**lazy provisioning**; no webhook required for local). Read **`role`** with **hybrid** JWT claims first, **GET user** fallback (short TTL cache optional). See `docs/clerk-auth-rollout-plan.md`.
 
 ## Client pages
 
@@ -135,10 +136,10 @@ Prefix: `/api/v1` (JSON). Mutations and history require **Clerk JWT** verified s
 
 **users**
 
-- `id` UUID PK (or map `clerk_user_id` TEXT UNIQUE)
-- `email` TEXT (synced from Clerk)
-- `role` ENUM: `user`, `contributor`, `admin`
+- `id` TEXT PK (= Clerk `sub`)
+- `email` TEXT (optional cache from Clerk webhooks)
 - `created_at`, `updated_at`, `deleted_at`
+- **No `role` column** — app role lives in Clerk **`public_metadata`** only; see `docs/clerk-auth-rollout-plan.md`.
 
 **scans**
 
