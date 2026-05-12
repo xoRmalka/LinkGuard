@@ -4,7 +4,7 @@ LinkGuard scores URLs using layered heuristics and (optionally) Google Safe Brow
 
 ## Stack
 
-- **Client:** Vite + React + TypeScript, React Router, Clerk (optional), EN/HE + RTL
+- **Client:** Vite + React + TypeScript, React Router, [`@clerk/react`](https://clerk.com/docs/react/getting-started/quickstart) (optional), EN/HE + RTL
 - **Server:** Flask + SQLAlchemy (SQLite locally, Neon Postgres via `DATABASE_URL`)
 
 ## Quick start
@@ -26,7 +26,8 @@ API listens on `http://127.0.0.1:5001`. Health: `GET http://127.0.0.1:5001/api/v
 
 ```bash
 cd client
-cp .env.example .env
+cp .env.example .env.local
+# Set VITE_CLERK_PUBLISHABLE_KEY in .env.local (see Clerk Dashboard → API keys → React).
 npm install
 npm run dev
 ```
@@ -35,7 +36,7 @@ Vite proxies `/api` → Flask, so the client can call `/api/v1/...` without CORS
 
 ### 3) Clerk + Neon (optional)
 
-- Add `VITE_CLERK_PUBLISHABLE_KEY` to `client/.env` and `CLERK_ISSUER` to `server/.env` so the API can verify JWTs for signed-in routes.
+- Add `VITE_CLERK_PUBLISHABLE_KEY` to `client/.env.local` (or `.env`) and `CLERK_ISSUER` to `server/.env` (must equal the Dashboard **Frontend API URL** / JWT `iss`). If verification still fails, paste the **JWKS Public Key (PEM)** from Clerk → API keys into `CLERK_JWT_KEY` in `server/.env` (see `server/.env.example`). The client uses [`@clerk/react`](https://clerk.com/docs/react/getting-started/quickstart); `ClerkProvider` uses `import.meta.env.VITE_CLERK_PUBLISHABLE_KEY` (with Clerk’s bypass when the key is empty so guest mode still runs).
 - Set `DATABASE_URL` to your Neon connection string for Postgres. If omitted, SQLite `server/linkguard.db` is created automatically.
 
 **Admin (MVP):** promote a user to `admin` by updating the `users.role` column in the database after first sign-in.
