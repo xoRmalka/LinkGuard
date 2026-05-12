@@ -1,14 +1,16 @@
-import { SignUp } from '@clerk/clerk-react'
+import { SignUp } from '@clerk/react'
 import { Link } from 'react-router-dom'
 
 import { useI18n } from '../i18n/I18nProvider'
 
-const clerkKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string | undefined
+const hasPublishableKey = Boolean(
+  (import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string | undefined)?.trim()
+)
 
 export function SignUpPage() {
   const { t } = useI18n()
 
-  if (!clerkKey) {
+  if (!hasPublishableKey) {
     return (
       <div className="page panel narrow">
         <h1>{t('auth.titleUp')}</h1>

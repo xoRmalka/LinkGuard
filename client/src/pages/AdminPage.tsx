@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
-import { useAuth } from '@clerk/clerk-react'
+import { useAuth } from '@clerk/react'
 
 import { useI18n } from '../i18n/I18nProvider'
 import { listAdminUsers } from '../lib/api'
 
-const clerkKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string | undefined
+const hasPublishableKey = Boolean(
+  (import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string | undefined)?.trim()
+)
 
 function AdminInner() {
   const { t } = useI18n()
@@ -101,6 +103,6 @@ function AdminInner() {
 }
 
 export function AdminPage() {
-  if (!clerkKey) return <Navigate to="/" replace />
+  if (!hasPublishableKey) return <Navigate to="/" replace />
   return <AdminInner />
 }
