@@ -2,7 +2,12 @@ from __future__ import annotations
 
 from flask import Blueprint, current_app, jsonify, request
 
-from app.auth.clerk_jwt import get_bearer_token, require_auth, verify_clerk_jwt
+from app.auth.clerk_jwt import (
+    clerk_verify_error_message,
+    get_bearer_token,
+    require_auth,
+    verify_clerk_jwt,
+)
 from app.extensions import db
 from app.models.tables import Favorite, Report, Scan, User
 from app.services.guest_limit import check_and_consume_guest_scan
@@ -51,13 +56,14 @@ def create_scan():
     token = get_bearer_token()
     payload = None
     if token:
-        payload = verify_clerk_jwt(token)
+        payload, verify_err = verify_clerk_jwt(token)
         if not payload:
             return (
                 jsonify(
                     {
                         "error": "unauthorized",
-                        "message": "Invalid or expired authentication token.",
+                        "message": clerk_verify_error_message(verify_err),
+                        "verify_reason": verify_err,
                     }
                 ),
                 401,

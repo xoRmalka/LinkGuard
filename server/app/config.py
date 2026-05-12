@@ -18,6 +18,20 @@ def _database_uri() -> str:
 _DATABASE_URI = _database_uri()
 
 
+def _clerk_issuer() -> str:
+    raw = (os.environ.get("CLERK_ISSUER") or "").strip()
+    raw = raw.strip('"').strip("'")
+    return raw.rstrip("/")
+
+
+def _clerk_jwt_key_pem() -> str:
+    """Optional PEM public key from Clerk Dashboard (JWKS Public Key) for offline JWT verify."""
+    raw = (os.environ.get("CLERK_JWT_KEY") or "").strip()
+    if not raw:
+        return ""
+    return raw.replace("\\n", "\n").strip()
+
+
 class Config:
     SQLALCHEMY_DATABASE_URI = _DATABASE_URI
     SQLALCHEMY_TRACK_MODIFICATIONS = False
@@ -30,7 +44,8 @@ class Config:
     GUEST_SCANS_PER_DAY = 3
     WEIGHTS_VERSION = "2026-05-04-v1"
 
-    CLERK_ISSUER = os.environ.get("CLERK_ISSUER", "").rstrip("/")
+    CLERK_ISSUER = _clerk_issuer()
+    CLERK_JWT_KEY = _clerk_jwt_key_pem()
     GOOGLE_SAFE_BROWSING_API_KEY = os.environ.get("GOOGLE_SAFE_BROWSING_API_KEY", "").strip()
 
     _cors = os.environ.get(
