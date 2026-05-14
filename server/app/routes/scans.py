@@ -36,7 +36,7 @@ def _ensure_user(payload: dict) -> User:
         email = email.get("email") or str(uid) + "@placeholder.invalid"
     user = User.query.filter_by(id=uid).first()
     if user is None:
-        user = User(id=str(uid), email=str(email)[:320], role="user")
+        user = User(id=str(uid), email=str(email)[:320])
         db.session.add(user)
         db.session.commit()
     else:
@@ -47,6 +47,15 @@ def _ensure_user(payload: dict) -> User:
             user.email = ne
         db.session.commit()
     return user
+
+
+@bp.get("/me")
+@require_auth
+def get_me():
+    """Lightweight session bootstrap: runs lazy default `public_metadata.role` and returns resolved role."""
+    payload = request.clerk_user  # type: ignore[attr-defined]
+    role = getattr(request, "clerk_effective_role", "user")
+    return jsonify({"user_id": str(payload.get("sub")), "role": role})
 
 
 @bp.post("/scans")
@@ -96,8 +105,8 @@ def create_scan():
         )
 
     if payload:
-        _ensure_user(payload)
         uid = str(payload.get("sub"))
+        _ensure_user(payload)
         scan = Scan(
             user_id=uid,
             input_url=result["input_url"],
@@ -129,8 +138,8 @@ def get_scan(scan_id: str):
     scan = Scan.query.filter_by(id=scan_id).first()
     if not scan:
         return jsonify({"error": "not_found", "message": "Scan not found."}), 404
-    user = User.query.filter_by(id=uid, deleted_at=None).first()
-    if scan.user_id != uid and not (user and user.role == "admin"):
+    is_admin = getattr(request, "clerk_effective_role", None) == "admin"
+    if scan.user_id != uid and not is_admin:
         return jsonify({"error": "forbidden", "message": "You cannot access this scan."}), 403
     return jsonify(scan.to_dict())
 

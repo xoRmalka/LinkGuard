@@ -4,12 +4,9 @@ import { BrowserRouter } from 'react-router-dom'
 import { ClerkProvider } from '@clerk/react'
 
 import { AppRoutes } from './app/AppRoutes.tsx'
+import { hasClerkPublishableKey } from './lib/env'
 import { I18nProvider } from './i18n/I18nProvider.tsx'
 import './index.css'
-
-const hasPublishableKey = Boolean(
-  (import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string | undefined)?.trim()
-)
 
 function AppTree() {
   return (
@@ -26,7 +23,7 @@ createRoot(document.getElementById('root')!).render(
     <ClerkProvider
       afterSignOutUrl="/"
       publishableKey={(import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string | undefined) ?? ''}
-      {...(!hasPublishableKey ? { __internal_bypassMissingPublishableKey: true } : {})}
+      {...(!hasClerkPublishableKey ? { __internal_bypassMissingPublishableKey: true } : {})}
     >
       <AppTree />
     </ClerkProvider>

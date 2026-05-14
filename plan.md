@@ -124,6 +124,7 @@ Prefix: `/api/v1` (JSON). Mutations and history require **Clerk JWT** verified s
 |--------|------|------|---------------|
 | POST | `/scans` | Optional / rate-limited | Body `{ url }` — run or enqueue scan |
 | GET | `/scans/{id}` | Owner or Admin | Full result |
+| GET | `/me` | User+ | Session bootstrap; resolves Clerk `public_metadata.role` (lazy default) |
 | GET | `/me/scans` | User+ | Paginated history |
 | POST | `/scans/{id}/favorite` | User+ | Favorite toggle |
 | POST | `/reports` | User+ | Report URL + optional note |

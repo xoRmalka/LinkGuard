@@ -48,6 +48,8 @@ class Config:
     CLERK_JWT_KEY = _clerk_jwt_key_pem()
     GOOGLE_SAFE_BROWSING_API_KEY = os.environ.get("GOOGLE_SAFE_BROWSING_API_KEY", "").strip()
 
+    CLERK_SECRET_KEY = os.environ.get("CLERK_SECRET_KEY", "").strip()
+
     _cors = os.environ.get(
         "CORS_ORIGINS",
         "http://127.0.0.1:5173,http://localhost:5173",

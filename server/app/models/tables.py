@@ -13,7 +13,6 @@ class User(db.Model):
 
     id = db.Column(db.String(64), primary_key=True)  # Clerk user id (sub)
     email = db.Column(db.String(320), nullable=False, index=True)
-    role = db.Column(db.String(32), nullable=False, default="user")
     created_at = db.Column(db.DateTime(timezone=True), default=utcnow, nullable=False)
     updated_at = db.Column(db.DateTime(timezone=True), default=utcnow, onupdate=utcnow, nullable=False)
     deleted_at = db.Column(db.DateTime(timezone=True), nullable=True)
@@ -26,7 +25,6 @@ class User(db.Model):
         return {
             "id": self.id,
             "email": self.email,
-            "role": self.role,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "deleted_at": self.deleted_at.isoformat() if self.deleted_at else None,
         }

@@ -3,12 +3,9 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@clerk/react'
 
 import { useI18n } from '../i18n/I18nProvider'
+import { hasClerkPublishableKey } from '../lib/env'
 import { postScan } from '../lib/api'
 import type { ScanPayload } from '../lib/types'
-
-const hasPublishableKey = Boolean(
-  (import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string | undefined)?.trim()
-)
 
 const EXAMPLES = [
   { labelKey: 'home.example1' as const, url: 'https://www.wikipedia.org/wiki/Phishing' },
@@ -127,6 +124,6 @@ function HomeWithToken() {
 }
 
 export function HomePage() {
-  if (!hasPublishableKey) return <HomeContent />
+  if (!hasClerkPublishableKey) return <HomeContent />
   return <HomeWithToken />
 }

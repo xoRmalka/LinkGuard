@@ -4,16 +4,20 @@ import {
   SignInButton,
   SignUpButton,
   UserButton,
+  useAuth,
+  useUser,
 } from '@clerk/react'
 
 import { useI18n } from '../i18n/I18nProvider'
-
-const hasPublishableKey = Boolean(
-  (import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string | undefined)?.trim()
-)
+import { isAppAdmin } from '../lib/clerkAdmin'
+import { hasClerkPublishableKey } from '../lib/env'
 
 export function Header() {
   const { t, locale, setLocale } = useI18n()
+  const { sessionClaims } = useAuth()
+  const { user, isLoaded: userLoaded } = useUser()
+  const showAdmin =
+    userLoaded && isAppAdmin(sessionClaims as Record<string, unknown> | null, user?.publicMetadata)
 
   return (
     <header className="site-header">
@@ -27,14 +31,16 @@ export function Header() {
           <NavLink to="/" className="nav-link" end>
             {t('nav.home')}
           </NavLink>
-          {hasPublishableKey ? (
+          {hasClerkPublishableKey ? (
             <Show when="signed-in">
               <NavLink to="/dashboard" className="nav-link">
                 {t('nav.dashboard')}
               </NavLink>
-              <NavLink to="/admin" className="nav-link">
-                {t('nav.admin')}
-              </NavLink>
+              {showAdmin ? (
+                <NavLink to="/admin" className="nav-link">
+                  {t('nav.admin')}
+                </NavLink>
+              ) : null}
             </Show>
           ) : null}
         </nav>
@@ -57,7 +63,7 @@ export function Header() {
             </button>
           </div>
 
-          {!hasPublishableKey ? (
+          {!hasClerkPublishableKey ? (
             <span className="muted small">{t('auth.clerkMissing')}</span>
           ) : (
             <>

@@ -6,11 +6,8 @@ import { ScoreCard } from '../components/ScoreCard'
 import { VerdictBanner } from '../components/VerdictBanner'
 import { useI18n } from '../i18n/I18nProvider'
 import { postFavorite, postReport } from '../lib/api'
+import { hasClerkPublishableKey } from '../lib/env'
 import type { ScanPayload, Verdict } from '../lib/types'
-
-const hasPublishableKey = Boolean(
-  (import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string | undefined)?.trim()
-)
 
 function ResultBody({
   scan,
@@ -173,6 +170,6 @@ export function ResultPage() {
     )
   }
 
-  if (!hasPublishableKey) return <ResultBody scan={scan} />
+  if (!hasClerkPublishableKey) return <ResultBody scan={scan} />
   return <ResultWithClerk scan={scan} />
 }

@@ -66,6 +66,7 @@ No webhook required for local dev.
 2. If **`role` is missing or empty**, call Clerk **`PATCH /v1/users/{user_id}`** (merge **`public_metadata`**) to set **`role: "user"`** (idempotent).
 3. Handle **concurrent first requests** gracefully (duplicate PATCH with same value is fine).
 4. **Short-circuit** after write: for that request, treat role as **`user`** without waiting for JWT refresh.
+5. **`GET /api/v1/me`** (`@require_auth`): lightweight endpoint so the client triggers lazy default **right after sign-in**. **`POST /scans`** (signed-in) does **not** run lazy default again — it only syncs the local `users` row; rely on **`/me`** or any other **`@require_auth`** call first (SPA shell calls **`/me`** on sign-in).
 
 Optional later: **`user.created` webhook** (public HTTPS — ngrok or hosted function) if you need metadata **before** the first API call.
 
@@ -77,7 +78,7 @@ Today: **`users.role == "admin"`** in Neon (`require_admin`).
 
 Target:
 
-- **`require_app_admin`** (or renamed decorator): session JWT verified; **`public_metadata.role == "admin"`** via **hybrid** read above — **do not** read **`User.role`** from the database.
+- **`require_admin`** (decorator): session JWT verified; **`public_metadata.role == "admin"`** via **hybrid** read above — **do not** read **`User.role`** from the database.
 - **Cross-user admin read** of a scan: allow if **`role == "admin"`** in Clerk metadata/claims.
 
 ---
@@ -99,15 +100,15 @@ Replace stubs in **`server/app/routes/admin.py`** and remove dependence on **`Us
 
 ## Phase 5 — Client
 
-- **Admin nav:** show **Admin** only when **`publicMetadata.role === "admin"`** or matching **session claim**, consistent with Flask **403**.
+- **Session bootstrap:** when Clerk reports **signed-in** and a publishable key exists, call **`GET /api/v1/me`** once (from the app shell) so the server runs lazy default **`role`** before the user opens Dashboard or runs a scan.
+- **Admin nav:** show **Admin** only when **`public_metadata.role === "admin"`** (from `useUser().user.publicMetadata` in the Clerk JS SDK, which mirrors `public_metadata`) or matching **session JWT** claim, consistent with Flask **403**.
 - No **`<OrganizationSwitcher />`** requirement for this plan path.
 
 ---
 
-## Phase 6 — Data & migrations (deferred)
+## Phase 6 — Data & migrations
 
-- **Migration (later):** drop **`users.role`** once no code path reads or writes it.
-- Until then, code may ignore the column or stop writing it.
+- **`users.role`:** removed from the SQLAlchemy model; app roles exist only in Clerk **`public_metadata.role`**. If an older local SQLite file still has a `role` column and inserts fail, delete **`server/linkguard.db`** and restart, or drop the column (Postgres: `ALTER TABLE users DROP COLUMN role`).
 
 ---
 

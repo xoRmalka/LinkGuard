@@ -7,6 +7,8 @@ import jwt
 from flask import current_app, jsonify, request
 from jwt import PyJWKClient
 
+from app.auth.clerk_roles import ensure_lazy_default_and_resolve
+
 
 def get_bearer_token() -> str | None:
     auth = request.headers.get("Authorization", "")
@@ -145,54 +147,60 @@ def clerk_verify_error_message(reason: str | None) -> str:
     return "Invalid or expired authentication token."
 
 
+def _auth_and_attach() -> Tuple[Any, Any]:
+    """
+    Verify JWT, attach `request.clerk_user` and `request.clerk_effective_role` (`user`|`admin`).
+    Returns (None, None) on success, or (response_tuple, status) on error — actually return (error_response, status_code) or use a small result type.
+
+    Returns:
+        (None, None) on success
+        (jsonify(...), http_code) on failure
+    """
+    token = get_bearer_token()
+    if not token:
+        return (jsonify({"error": "unauthorized", "message": "Authentication required."}), 401)
+    payload, err = verify_clerk_jwt(token)
+    if not payload:
+        return (
+            jsonify(
+                {
+                    "error": "unauthorized",
+                    "message": clerk_verify_error_message(err),
+                    "verify_reason": err,
+                }
+            ),
+            401,
+        )
+    uid = payload.get("sub")
+    if not uid:
+        return (jsonify({"error": "unauthorized", "message": "Missing subject in token."}), 401)
+    uid_str = str(uid)
+    role = ensure_lazy_default_and_resolve(uid_str, payload)
+    request.clerk_user = payload  # type: ignore[attr-defined]
+    request.clerk_effective_role = role  # type: ignore[attr-defined]
+    return (None, None)
+
+
 def require_auth(fn: Callable) -> Callable:
     @wraps(fn)
     def wrapper(*args, **kwargs):
-        token = get_bearer_token()
-        if not token:
-            return jsonify({"error": "unauthorized", "message": "Authentication required."}), 401
-        payload, err = verify_clerk_jwt(token)
-        if not payload:
-            return (
-                jsonify(
-                    {
-                        "error": "unauthorized",
-                        "message": clerk_verify_error_message(err),
-                        "verify_reason": err,
-                    }
-                ),
-                401,
-            )
-        request.clerk_user = payload  # type: ignore[attr-defined]
+        err_body, code = _auth_and_attach()
+        if err_body is not None:
+            return err_body, code
         return fn(*args, **kwargs)
 
     return wrapper
 
 
 def require_admin(fn: Callable) -> Callable:
+    """Admin = Clerk `public_metadata.role` (or JWT claim) resolves to `admin` after lazy default."""
+
     @wraps(fn)
     def wrapper(*args, **kwargs):
-        token = get_bearer_token()
-        if not token:
-            return jsonify({"error": "unauthorized", "message": "Authentication required."}), 401
-        payload, err = verify_clerk_jwt(token)
-        if not payload:
-            return (
-                jsonify(
-                    {
-                        "error": "unauthorized",
-                        "message": clerk_verify_error_message(err),
-                        "verify_reason": err,
-                    }
-                ),
-                401,
-            )
-        request.clerk_user = payload  # type: ignore[attr-defined]
-        from app.models.tables import User
-
-        uid = payload.get("sub")
-        user = User.query.filter_by(id=uid, deleted_at=None).first()
-        if not user or user.role != "admin":
+        err_body, code = _auth_and_attach()
+        if err_body is not None:
+            return err_body, code
+        if getattr(request, "clerk_effective_role", None) != "admin":
             return jsonify({"error": "forbidden", "message": "Admin role required."}), 403
         return fn(*args, **kwargs)
 

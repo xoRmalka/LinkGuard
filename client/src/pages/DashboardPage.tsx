@@ -4,10 +4,7 @@ import { useAuth } from '@clerk/react'
 
 import { useI18n } from '../i18n/I18nProvider'
 import { listMyScans } from '../lib/api'
-
-const hasPublishableKey = Boolean(
-  (import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string | undefined)?.trim()
-)
+import { hasClerkPublishableKey } from '../lib/env'
 
 type Row = {
   id: string
@@ -86,6 +83,6 @@ function DashboardInner() {
 }
 
 export function DashboardPage() {
-  if (!hasPublishableKey) return <Navigate to="/" replace />
+  if (!hasClerkPublishableKey) return <Navigate to="/" replace />
   return <DashboardInner />
 }
