@@ -182,9 +182,9 @@ function ResultBody({
         <h2>{t('result.normalized')}</h2>
         <p className="mono">{scan.normalized_url}</p>
         <p className="muted small">
-          Host: {scan.host}
-          {scan.is_ip_host ? ' · IP host' : ''}
-          {scan.punycode_applied ? ' · IDN/punycode' : ''}
+          {t('result.normalized.host')}: {scan.host}
+          {scan.is_ip_host ? ` · ${t('result.normalized.ipHost')}` : ''}
+          {scan.punycode_applied ? ` · ${t('result.normalized.punycode')}` : ''}
         </p>
       </section>
 
