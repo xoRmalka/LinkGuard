@@ -103,8 +103,8 @@ function ResultBody({
       <section className="panel">
         <h2>{t('result.why')}</h2>
         <ul className="prose-list">
-          {(scan.explanation || []).map((line) => (
-            <li key={line}>{line}</li>
+          {(scan.explanation_keys || scan.explanation || []).map((key) => (
+            <li key={key}>{t(key as Parameters<typeof t>[0]) || key}</li>
           ))}
         </ul>
         {(scan.insufficient_reasons || []).length > 0 && (
@@ -119,8 +119,8 @@ function ResultBody({
       <section className="panel">
         <h2>{t('result.actions')}</h2>
         <ul className="prose-list">
-          {(scan.recommended_actions || []).map((line) => (
-            <li key={line}>{line}</li>
+          {(scan.action_keys || scan.recommended_actions || []).map((key) => (
+            <li key={key}>{t(key as Parameters<typeof t>[0]) || key}</li>
           ))}
         </ul>
       </section>

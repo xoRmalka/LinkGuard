@@ -32,6 +32,8 @@ export type ScanPayload = {
   weights_version: string
   explanation: string[]
   recommended_actions: string[]
+  explanation_keys?: string[]
+  action_keys?: string[]
   insufficient?: boolean
   insufficient_reasons?: string[]
 }
