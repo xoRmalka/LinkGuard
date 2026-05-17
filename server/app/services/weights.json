@@ -1,9 +1,9 @@
 {
-  "version": "2026-05-04-v1",
+  "version": "2026-05-17-v2",
   "signals": {
     "parse": { "weight": 0.05, "max_points": 5 },
     "ssl": { "weight": 0.15, "max_points": 18 },
-    "domain_age": { "weight": 0.12, "max_points": 14 },
+    "domain_age": { "weight": 0.2, "max_points": 20 },
     "typosquatting": { "weight": 0.18, "max_points": 22 },
     "ip_host": { "weight": 0.1, "max_points": 12 },
     "entropy": { "weight": 0.1, "max_points": 12 },

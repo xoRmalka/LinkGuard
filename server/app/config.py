@@ -42,7 +42,7 @@ class Config:
     )
 
     GUEST_SCANS_PER_DAY = 3
-    WEIGHTS_VERSION = "2026-05-04-v1"
+    WEIGHTS_VERSION = "2026-05-17-v2"
 
     CLERK_ISSUER = _clerk_issuer()
     CLERK_JWT_KEY = _clerk_jwt_key_pem()

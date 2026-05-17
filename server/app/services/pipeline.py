@@ -34,7 +34,7 @@ def run_pipeline(raw_url: str) -> dict:
     signals.append(shortener_signal(norm.host or ""))
     signals.append(typosquatting_signal(norm.host_display or norm.host or ""))
     signals.append(entropy_signal(path_query))
-    signals.append(domain_age_signal())
+    signals.append(domain_age_signal(norm.host or ""))
     signals.append(ssl_signal(norm.normalized_url or ""))
 
     api_key = current_app.config.get("GOOGLE_SAFE_BROWSING_API_KEY", "")
