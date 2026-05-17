@@ -12,7 +12,8 @@ from app.services.signals.entropy import entropy_signal
 from app.services.signals.ip_host import ip_host_signal
 from app.services.signals.parse import parse_signal
 from app.services.signals.shortener import shortener_signal
-from app.services.signals.ssl_check import ssl_signal
+# SSL check removed - security risk (direct connection to malicious hosts) and high false positive rate
+# from app.services.signals.ssl_check import ssl_signal
 from app.services.signals.typosquatting import typosquatting_signal
 
 
@@ -35,7 +36,8 @@ def run_pipeline(raw_url: str) -> dict:
     signals.append(typosquatting_signal(norm.host_display or norm.host or ""))
     signals.append(entropy_signal(path_query))
     signals.append(domain_age_signal(norm.host or ""))
-    signals.append(ssl_signal(norm.normalized_url or ""))
+    # SSL check removed - causes security issues (direct connection) and false positives
+    # signals.append(ssl_signal(norm.normalized_url or ""))
 
     api_key = current_app.config.get("GOOGLE_SAFE_BROWSING_API_KEY", "")
     signals.append(check_safe_browsing(norm.normalized_url or "", api_key))
