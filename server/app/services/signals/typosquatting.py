@@ -51,6 +51,9 @@ def typosquatting_signal(host: str) -> dict:
     base = re.sub(r"^www\.", "", (host or "").lower())
     base = base.split(":")[0]
 
+    # Extract just the domain name without TLD for comparison
+    domain_label = base.split(".")[0]
+
     best = None
     best_d = 99
     for brand in _BRANDS:
@@ -58,7 +61,7 @@ def typosquatting_signal(host: str) -> dict:
             best_d = 0
             best = brand
             break
-        d = _levenshtein(base.split(".")[0], brand)
+        d = _levenshtein(domain_label, brand)
         if d < best_d:
             best_d = d
             best = brand
@@ -67,16 +70,16 @@ def typosquatting_signal(host: str) -> dict:
     summary = "No strong typosquatting heuristic matched."
     if best_d == 1 and best:
         concern = True
-        summary = f"Host is very close to “{best}” — possible typosquatting."
-    elif best_d == 2 and best and len(base) <= len(best) + 3:
+        summary = f'Host is very close to "{best}" - possible typosquatting.'
+    elif best_d == 2 and best and len(domain_label) <= len(best) + 3:
         concern = True
-        summary = f"Host somewhat resembles “{best}” — review carefully."
+        summary = f'Host somewhat resembles "{best}" - review carefully.'
 
     mixed = _mixed_script(host or "")
     if mixed:
         concern = True
         summary = (summary + " ") if summary else ""
-        summary += "Mixed scripts in hostname — possible homograph attack."
+        summary += "Mixed scripts in hostname - possible homograph attack."
 
     return {
         "id": "typosquatting",
