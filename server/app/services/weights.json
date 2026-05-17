@@ -1,5 +1,5 @@
 {
-  "version": "2026-05-17-v3",
+  "version": "2026-05-17-v4-safety",
   "signals": {
     "parse": { "weight": 0.02, "max_points": 2 },
     "domain_age": { "weight": 0.30, "max_points": 30 },
