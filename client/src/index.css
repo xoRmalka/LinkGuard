@@ -182,6 +182,52 @@ a {
   background: transparent;
 }
 
+.signals-toggle {
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+  color: var(--accent);
+}
+
+.signal-icon-wrap {
+  position: relative;
+  display: inline-flex;
+  cursor: default;
+}
+
+.signal-icon-wrap::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1e2e3d;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 5px 9px;
+  font-size: 0.78rem;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s;
+  z-index: 10;
+}
+
+.signal-icon-wrap:hover::after {
+  opacity: 1;
+}
+
+.signal-name {
+  display: block;
+  color: var(--heading);
+}
+
+.signal-desc {
+  display: block;
+  font-size: 0.82rem;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
 .main {
   flex: 1;
 }

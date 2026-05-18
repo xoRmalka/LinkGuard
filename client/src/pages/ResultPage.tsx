@@ -9,6 +9,47 @@ import { postFavorite, postReport } from '../lib/api'
 import { hasClerkPublishableKey } from '../lib/env'
 import type { ScanPayload, Verdict } from '../lib/types'
 
+function SignalIcon({ status, concern, tooltip }: { status: string; concern?: boolean; tooltip: string }) {
+  let svg: React.ReactNode
+
+  if (status === 'skipped') {
+    svg = (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <circle cx="8" cy="8" r="7" stroke="#9ca3af" strokeWidth="1.5" />
+        <line x1="5" y1="8" x2="11" y2="8" stroke="#9ca3af" strokeWidth="1.5" strokeLinecap="round" />
+      </svg>
+    )
+  } else if (status === 'unknown' || status === 'error') {
+    svg = (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <circle cx="8" cy="8" r="7" stroke="#9ca3af" strokeWidth="1.5" />
+        <text x="8" y="12" textAnchor="middle" fontSize="10" fill="#9ca3af">?</text>
+      </svg>
+    )
+  } else if (concern) {
+    svg = (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <path d="M8 2L14.5 13.5H1.5L8 2Z" stroke="#f59e0b" strokeWidth="1.5" strokeLinejoin="round" />
+        <line x1="8" y1="7" x2="8" y2="10" stroke="#f59e0b" strokeWidth="1.5" strokeLinecap="round" />
+        <circle cx="8" cy="12" r="0.75" fill="#f59e0b" />
+      </svg>
+    )
+  } else {
+    svg = (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <circle cx="8" cy="8" r="7" stroke="#22c55e" strokeWidth="1.5" />
+        <polyline points="5,8.5 7,10.5 11,6" stroke="#22c55e" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    )
+  }
+
+  return (
+    <span className="signal-icon-wrap" data-tooltip={tooltip}>
+      {svg}
+    </span>
+  )
+}
+
 function ResultBody({
   scan,
   getToken,
@@ -20,6 +61,7 @@ function ResultBody({
   const navigate = useNavigate()
   const [note, setNote] = useState<string | null>(null)
   const [reporting, setReporting] = useState(false)
+  const [showSignals, setShowSignals] = useState(false)
 
   const verdict: Verdict = useMemo(() => scan.verdict, [scan.verdict])
 
@@ -84,29 +126,56 @@ function ResultBody({
       </section>
 
       <section className="panel">
-        <h2>{t('result.signals')}</h2>
-        <div className="table-wrap">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>{t('result.col.signal')}</th>
-                <th>{t('result.col.status')}</th>
-                <th>{t('result.col.points')}</th>
-                <th>{t('result.col.summary')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(scan.breakdown || []).map((row) => (
-                <tr key={row.id}>
-                  <td>{row.id}</td>
-                  <td>{row.status}</td>
-                  <td>{row.points ?? '—'}</td>
-                  <td>{row.summary ?? '—'}</td>
+        <button
+          type="button"
+          className="btn btn--ghost signals-toggle"
+          onClick={() => setShowSignals((v) => !v)}
+          aria-expanded={showSignals}
+        >
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 14 14"
+            fill="none"
+            aria-hidden="true"
+            style={{ transform: showSignals ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}
+          >
+            <polyline points="2,4 7,10 12,4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          {showSignals ? t('result.signals.hide') : t('result.signals.show')}
+        </button>
+        {showSignals && (
+          <div className="table-wrap" style={{ marginTop: '0.75rem' }}>
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th></th>
+                  <th>{t('result.col.signal')}</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {(scan.breakdown || []).map((row) => {
+                  const iconTooltip = row.status === 'skipped'
+                    ? t('signal.status.skipped')
+                    : row.status === 'unknown' || row.status === 'error'
+                    ? t('signal.status.unknown')
+                    : row.concern
+                    ? t('signal.status.concern')
+                    : t('signal.status.ok')
+                  return (
+                    <tr key={row.id}>
+                      <td><SignalIcon status={row.status} concern={row.concern} tooltip={iconTooltip} /></td>
+                      <td>
+                        <span className="signal-name">{t(`signal.${row.id}` as Parameters<typeof t>[0]) || row.id}</span>
+                        <span className="signal-desc">{t(`signal.${row.id}.desc` as Parameters<typeof t>[0])}</span>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </section>
 
       <section className="panel">
