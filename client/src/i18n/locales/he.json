@@ -62,8 +62,6 @@
   "signal.entropy.desc": "האם נתיב הכתובת נראה מופק באקראי (נפוץ בפישינג)",
   "signal.domain_age": "גיל הדומיין",
   "signal.domain_age.desc": "האם הדומיין נרשם לאחרונה (דומיינים חדשים מסוכנים יותר)",
-  "signal.ssl": "חיבור מאובטח",
-  "signal.ssl.desc": "האם האתר משתמש בחיבור HTTPS מוצפן",
   "signal.safe_browsing": "Google Safe Browsing",
   "signal.safe_browsing.desc": "האם Google סימנה כתובת זו כמזיקה",
   "result.normalized": "כתובת מנורמלת",

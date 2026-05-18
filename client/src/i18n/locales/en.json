@@ -62,8 +62,6 @@
   "signal.entropy.desc": "Whether the URL path looks randomly generated (common in phishing)",
   "signal.domain_age": "Domain age",
   "signal.domain_age.desc": "Whether the domain was registered recently (new domains are riskier)",
-  "signal.ssl": "Secure connection",
-  "signal.ssl.desc": "Whether the site uses an encrypted HTTPS connection",
   "signal.safe_browsing": "Google Safe Browsing",
   "signal.safe_browsing.desc": "Whether Google has flagged this URL as malicious",
   "result.normalized": "Normalized URL",
