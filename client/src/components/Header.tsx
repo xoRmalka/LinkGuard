@@ -36,6 +36,9 @@ export function Header() {
               <NavLink to="/dashboard" className="nav-link">
                 {t('nav.dashboard')}
               </NavLink>
+              <NavLink to="/favorites" className="nav-link">
+                {t('nav.favorites')}
+              </NavLink>
               {showAdmin ? (
                 <NavLink to="/admin" className="nav-link">
                   {t('nav.admin')}

@@ -183,3 +183,18 @@ export async function postReport(
   })
   if (!res.ok) throw new Error('report failed')
 }
+
+export async function getFavorites(getToken: () => Promise<string | null>) {
+  const token = await getToken()
+  const res = await fetch(`${base()}/api/v1/favorites`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+  })
+  if (!res.ok) {
+    throw new Error('Failed to fetch favorites')
+  }
+  return res.json()
+}

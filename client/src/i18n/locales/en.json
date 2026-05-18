@@ -115,5 +115,6 @@
   "action.safe.verify": "If the link was unsolicited, verify through another channel before logging in or paying.",
   "action.safe.updates": "Keep device and browser updates enabled for defense in depth.",
   "error.generic": "Something went wrong.",
+  "nav.favorites": "Favorites",
   "footer.note": "LinkGuard never claims a link is 100% safe."
 }
