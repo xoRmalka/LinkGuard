@@ -59,61 +59,41 @@ def run_pipeline(raw_url: str) -> dict:
         **agg,
         "explanation": explanation,
         "recommended_actions": actions,
+        "explanation_keys": explanation,
+        "action_keys": actions,
     }
 
 
 def _copy_for_result(agg: dict) -> tuple[list[str], list[str]]:
-    """Generate user-facing explanation and recommended actions based on safety score."""
-    lines: list[str] = []
-    actions: list[str] = []
+    """Generate user-facing explanation and recommended actions using i18n keys."""
     verdict = agg["verdict"]
-    score = agg["score"]
 
     if verdict == "insufficient_data":
-        lines.append(
-            "We couldn't verify all security signals, so our confidence in this assessment is limited."
+        return (
+            ["explanation.insufficient_data.main"],
+            ["action.insufficient_data.retry", "action.insufficient_data.avoid"],
         )
-        lines.extend(agg.get("insufficient_reasons") or [])
-        actions.append("Try scanning again later, or sign in if the service was temporarily rate-limited.")
-        actions.append("Avoid entering credentials or downloading files until you can get stronger confirmation.")
-        return lines, actions
 
     if verdict == "dangerous" or verdict == "high_risk":
-        lines.append(
-            f"This link appears unsafe ({score}% safety confidence). Multiple security concerns were detected."
+        return (
+            ["explanation.dangerous.main"],
+            ["action.dangerous.stop", "action.dangerous.report"],
         )
-        actions.append("Do not enter credentials, download files, or click this link.")
-        actions.append("If you already opened it, close the page immediately.")
-        actions.append("Report this link if it came from an unexpected message or email.")
-        return lines, actions
 
     if verdict == "moderate_risk":
-        lines.append(
-            f"This link shows some concerning patterns ({score}% safety confidence). Proceed with caution."
+        return (
+            ["explanation.suspicious.main"],
+            ["action.suspicious.verify", "action.suspicious.navigate"],
         )
-        actions.append("Verify the sender through a second channel before taking any action.")
-        actions.append("If this is for login or payment, navigate to the site directly by typing the known URL.")
-        actions.append("Look for signs of legitimacy: official domain name, HTTPS, familiar branding.")
-        return lines, actions
 
     if verdict == "low_risk":
-        lines.append(
-            f"This link appears mostly safe ({score}% safety confidence), but stay alert."
+        return (
+            ["explanation.low_risk.main", "explanation.low_risk.caveat"],
+            ["action.low_risk.verify", "action.low_risk.updates"],
         )
-        lines.append(
-            "No major red flags detected, though this doesn't guarantee the link is completely harmless."
-        )
-        actions.append("If the link was unsolicited, verify through another channel before logging in or paying.")
-        actions.append("Keep your device and browser updated for defense in depth.")
-        return lines, actions
 
     # verdict == "safe"
-    lines.append(
-        f"This link appears safe ({score}% safety confidence). No significant security concerns detected."
+    return (
+        ["explanation.safe.main", "explanation.safe.caveat"],
+        ["action.safe.verify", "action.safe.updates"],
     )
-    lines.append(
-        "All automated checks passed, though you should always stay cautious with unexpected links."
-    )
-    actions.append("If this link came from an unknown sender, verify it through another channel first.")
-    actions.append("Keep device and browser updates enabled for ongoing protection.")
-    return lines, actions
