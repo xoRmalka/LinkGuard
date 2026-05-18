@@ -1,13 +1,12 @@
 {
-  "version": "2026-05-04-v1",
+  "version": "2026-05-17-v4-safety",
   "signals": {
-    "parse": { "weight": 0.05, "max_points": 5 },
-    "ssl": { "weight": 0.15, "max_points": 18 },
-    "domain_age": { "weight": 0.12, "max_points": 14 },
-    "typosquatting": { "weight": 0.18, "max_points": 22 },
-    "ip_host": { "weight": 0.1, "max_points": 12 },
-    "entropy": { "weight": 0.1, "max_points": 12 },
-    "shortener": { "weight": 0.08, "max_points": 9 },
-    "safe_browsing": { "weight": 0.22, "max_points": 28 }
+    "parse": { "weight": 0.02, "max_points": 2 },
+    "domain_age": { "weight": 0.30, "max_points": 30 },
+    "typosquatting": { "weight": 0.18, "max_points": 18 },
+    "ip_host": { "weight": 0.05, "max_points": 5 },
+    "entropy": { "weight": 0.03, "max_points": 3 },
+    "shortener": { "weight": 0.02, "max_points": 2 },
+    "safe_browsing": { "weight": 0.40, "max_points": 40 }
   }
 }

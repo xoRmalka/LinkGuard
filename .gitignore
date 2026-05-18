@@ -11,3 +11,4 @@ __pycache__/
 client/dist/
 server/linkguard.db
 server/.venv/
+.idea
