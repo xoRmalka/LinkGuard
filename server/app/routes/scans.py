@@ -203,3 +203,28 @@ def create_report():
     db.session.add(r)
     db.session.commit()
     return jsonify({"id": r.id, "status": r.status}), 201
+
+@bp.get("/favorites")
+@require_auth
+def list_my_favorites():
+    payload = request.clerk_user  # type: ignore[attr-defined]
+    uid = str(payload.get("sub"))
+    
+    # שליפת כל המועדפים של המשתמש ממסד הנתונים
+    favorites = Favorite.query.filter_by(user_id=uid).all()
+    
+    items = []
+    for fav in favorites:
+        # בזכות ה-relationship שיש לכם ב-tables.py, אפשר לגשת ישירות לפרטי הסריקה
+        scan = fav.scan
+        if scan:
+            items.append({
+                "id": fav.id,
+                "scan_id": scan.id,
+                "normalized_url": scan.normalized_url,
+                "score": scan.score,
+                "verdict": scan.verdict,
+                "created_at": scan.created_at.isoformat() if scan.created_at else None
+            })
+            
+    return jsonify({"favorites": items})

@@ -75,5 +75,6 @@
   "admin.delete": "הסרה",
   "admin.deleteConfirm": "להסיר משתמש זה מ-Clerk? לא ניתן לבטל.",
   "error.generic": "משהו השתבש.",
+  "nav.favorites": "מועדפים",
   "footer.note": "LinkGuard לעולם לא מצהיר שקישור בטוח ב-100%."
 }

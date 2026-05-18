@@ -7,6 +7,7 @@ import { HomePage } from '../pages/HomePage'
 import { ResultPage } from '../pages/ResultPage'
 import { SignInPage } from '../pages/SignInPage'
 import { SignUpPage } from '../pages/SignUpPage'
+import { FavoritesPage } from '../pages/FavoritesPage'
 
 export function AppRoutes() {
   return (
@@ -19,6 +20,7 @@ export function AppRoutes() {
         <Route path="dashboard" element={<DashboardPage />} />
         <Route path="admin" element={<AdminPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="/favorites" element={<FavoritesPage />} />
       </Route>
     </Routes>
   )

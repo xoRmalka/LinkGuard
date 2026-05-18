@@ -75,5 +75,6 @@
   "admin.delete": "Remove",
   "admin.deleteConfirm": "Remove this user from Clerk? This cannot be undone.",
   "error.generic": "Something went wrong.",
+  "nav.favorites": "Favorites",
   "footer.note": "LinkGuard never claims a link is 100% safe."
 }
