@@ -1,4 +1,5 @@
 import type { RiskBand } from '../lib/types'
+import { normalizeBand } from '../lib/riskDisplay'
 import { useI18n } from '../i18n/I18nProvider'
 
 export function ScoreCard({
@@ -6,10 +7,11 @@ export function ScoreCard({
   band,
 }: {
   score: number
-  band: RiskBand
+  band: RiskBand | string
 }) {
   const { t } = useI18n()
-  const bandLabel = t(`result.band.${band}`)
+  const normalized = normalizeBand(band)
+  const bandLabel = t(`result.band.${normalized}`)
 
   return (
     <div className="score-card">
@@ -22,7 +24,7 @@ export function ScoreCard({
       </div>
       <div>
         <p className="eyebrow">{t('result.band')}</p>
-        <p className={`pill pill--${band}`}>{bandLabel}</p>
+        <p className={`pill pill--${normalized}`}>{bandLabel}</p>
       </div>
     </div>
   )

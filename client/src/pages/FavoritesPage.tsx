@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { useAuth } from '@clerk/react'
 
 import { useI18n } from '../i18n/I18nProvider'
 import { getFavorites } from '../lib/api'
+import { normalizeVerdict } from '../lib/riskDisplay'
 
 interface FavoriteItem {
-  id: number;
+  id: string
   scan_id: string;
   normalized_url: string;
   verdict: string;
@@ -64,9 +64,9 @@ export function FavoritesPage() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>URL</th>
-                <th>Score</th>
-                <th>Verdict</th>
+                <th>{t('dashboard.col.url')}</th>
+                <th>{t('dashboard.col.score')}</th>
+                <th>{t('dashboard.col.verdict')}</th>
               </tr>
             </thead>
             <tbody>
@@ -74,7 +74,9 @@ export function FavoritesPage() {
                 <tr key={fav.id}>
                   <td className="mono">{fav.normalized_url}</td>
                   <td>{fav.score}%</td>
-                  <td>{fav.verdict}</td>
+                  <td>
+                    {t(`result.verdict.${normalizeVerdict(fav.verdict)}` as Parameters<typeof t>[0])}
+                  </td>
                 </tr>
               ))}
             </tbody>

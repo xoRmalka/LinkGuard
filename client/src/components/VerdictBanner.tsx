@@ -1,18 +1,12 @@
 import type { Verdict } from '../lib/types'
+import { normalizeVerdict, verdictTone } from '../lib/riskDisplay'
 import { useI18n } from '../i18n/I18nProvider'
 
-export function VerdictBanner({ verdict }: { verdict: Verdict }) {
+export function VerdictBanner({ verdict }: { verdict: Verdict | string }) {
   const { t } = useI18n()
-  const tone =
-    verdict === 'dangerous'
-      ? 'danger'
-      : verdict === 'suspicious'
-        ? 'warn'
-        : verdict === 'insufficient_data'
-          ? 'muted'
-          : 'ok'
-
-  const labelKey = `result.verdict.${verdict}` as const
+  const normalized = normalizeVerdict(verdict)
+  const tone = verdictTone(verdict)
+  const labelKey = `result.verdict.${normalized}` as const
 
   return (
     <div className={`verdict verdict--${tone}`} role="status">

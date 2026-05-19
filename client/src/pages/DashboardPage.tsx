@@ -4,6 +4,7 @@ import { useAuth } from '@clerk/react'
 
 import { useI18n } from '../i18n/I18nProvider'
 import { listMyScans } from '../lib/api'
+import { normalizeVerdict } from '../lib/riskDisplay'
 import { hasClerkPublishableKey } from '../lib/env'
 
 type Row = {
@@ -69,8 +70,10 @@ function DashboardInner() {
               {rows.map((r) => (
                 <tr key={r.id}>
                   <td className="mono truncate">{r.normalized_url}</td>
-                  <td>{r.score}</td>
-                  <td>{r.verdict}</td>
+                  <td>{r.score}%</td>
+                  <td>
+                    {t(`result.verdict.${normalizeVerdict(r.verdict)}` as Parameters<typeof t>[0])}
+                  </td>
                   <td>{r.created_at ? new Date(r.created_at).toLocaleString() : '—'}</td>
                 </tr>
               ))}

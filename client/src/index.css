@@ -423,21 +423,21 @@ a {
   font-weight: 700;
 }
 
-.pill--low {
-  border-color: color-mix(in srgb, var(--ok) 45%, var(--border));
+.pill--safe {
+  border-color: color-mix(in srgb, var(--ok) 55%, var(--border));
   color: #bff3df;
 }
-.pill--medium {
+.pill--low_risk {
+  border-color: color-mix(in srgb, var(--ok) 35%, var(--border));
+  color: #d4f5e8;
+}
+.pill--moderate_risk {
   border-color: color-mix(in srgb, var(--warn) 45%, var(--border));
   color: #ffe6bf;
 }
-.pill--high {
-  border-color: color-mix(in srgb, var(--danger) 35%, var(--border));
+.pill--high_risk {
+  border-color: color-mix(in srgb, var(--danger) 45%, var(--border));
   color: #ffd0d0;
-}
-.pill--critical {
-  border-color: color-mix(in srgb, var(--danger) 65%, var(--border));
-  color: #ffb4b4;
 }
 
 .prose-list {

@@ -85,7 +85,7 @@ function ResultBody({
         { url: scan.normalized_url, scan_id: scan.scan_id ?? undefined },
         getToken
       )
-      setNote(t('admin.inviteSent'))
+      setNote(t('result.reportSent'))
     } catch {
       setNote(t('error.generic'))
     } finally {

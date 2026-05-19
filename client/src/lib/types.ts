@@ -1,10 +1,12 @@
 export type Verdict =
-  | 'safe_low'
-  | 'suspicious'
+  | 'safe'
+  | 'low_risk'
+  | 'moderate_risk'
+  | 'high_risk'
   | 'dangerous'
   | 'insufficient_data'
 
-export type RiskBand = 'low' | 'medium' | 'high' | 'critical'
+export type RiskBand = 'safe' | 'low_risk' | 'moderate_risk' | 'high_risk'
 
 export type SignalBreakdown = {
   id: string
