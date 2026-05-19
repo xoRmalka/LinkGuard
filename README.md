@@ -1,50 +1,161 @@
 # LinkGuard
 
-LinkGuard scores URLs using layered heuristics and (optionally) Google Safe Browsing, then explains the result in plain language—without claiming any link is 100% safe.
+LinkGuard helps you assess a URL **before you click**. Paste a link, run automated checks (heuristics, domain age, Google Safe Browsing), and get a **safety score (0–100%)**, a verdict, and plain-language guidance—in **English or Hebrew** (RTL).
 
-## Stack
+**Higher score = safer.** LinkGuard never claims a link is 100% safe.
 
-- **Client:** Vite + React + TypeScript, React Router, [`@clerk/react`](https://clerk.com/docs/react/getting-started/quickstart) (optional), EN/HE + RTL
-- **Server:** Flask + SQLAlchemy (SQLite locally, Neon Postgres via `DATABASE_URL`)
+---
+
+## Features
+
+| Area | Description |
+|------|-------------|
+| **URL scan** | Normalize URL, run signal pipeline, return safety % + verdict + breakdown |
+| **Guest mode** | Scan without sign-in (3 requests per UTC day per IP) |
+| **Signed-in** | Saved scan history, favorites, report URL |
+| **Auth** | [Clerk](https://clerk.com/) — optional; same app for client + API JWT |
+| **Admin** | User list, invites, roles via Clerk `public_metadata.role` |
+| **i18n** | EN / HE UI; Clerk components localized (`heIL` / `enUS`) |
+
+---
+
+## Architecture
+
+```
+Browser (Vite + React, :5173)
+    │  /api/v1/*  (dev: Vite proxy → :5001)
+    ▼
+Flask API (server/, :5001)
+    ├── SQLite (local) or Postgres (DATABASE_URL / Neon)
+    ├── Clerk JWT verify + Backend API (roles, admin)
+    └── Google Safe Browsing (optional)
+```
+
+| Layer | Tech |
+|-------|------|
+| **Client** | React 19, TypeScript, React Router, Vite 8 |
+| **Server** | Flask, SQLAlchemy |
+| **Auth** | Clerk (`@clerk/react`, `@clerk/localizations`) |
+| **DB** | `server/linkguard.db` or Neon via `DATABASE_URL` |
+
+---
 
 ## Quick start
 
-### 1) API (Flask)
+### 1. API (Flask)
 
 ```bash
 cd server
 python3 -m venv .venv
-source .venv/bin/activate
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-cp .env.example .env
+cp .env.example .env        # fill Clerk / Safe Browsing as needed
 python run.py
 ```
 
-API listens on `http://127.0.0.1:5001`. Health: `GET http://127.0.0.1:5001/api/v1/health`
+- API: **http://127.0.0.1:5001**
+- Health: `GET http://127.0.0.1:5001/api/v1/health`
 
-### 2) Web (Vite)
+### 2. Web (Vite)
 
 ```bash
 cd client
 cp .env.example .env.local
-# Set VITE_CLERK_PUBLISHABLE_KEY in .env.local (see Clerk Dashboard → API keys → React).
 npm install
 npm run dev
 ```
 
-Vite proxies `/api` → Flask, so the client can call `/api/v1/...` without CORS friction in dev.
+- App: **http://127.0.0.1:5173**
+- In dev, Vite **proxies** `/api` → Flask (no `VITE_API_URL` needed).
 
-### 3) Clerk + Neon (optional)
+### 3. Try it
 
-- Add `VITE_CLERK_PUBLISHABLE_KEY` to `client/.env.local` (or `.env`) and `CLERK_ISSUER` to `server/.env` (must equal the Dashboard **Frontend API URL** / JWT `iss`). If verification still fails, paste the **JWKS Public Key (PEM)** from Clerk → API keys into `CLERK_JWT_KEY` in `server/.env` (see `server/.env.example`). The client uses [`@clerk/react`](https://clerk.com/docs/react/getting-started/quickstart); `ClerkProvider` uses `import.meta.env.VITE_CLERK_PUBLISHABLE_KEY` (with Clerk’s bypass when the key is empty so guest mode still runs).
-- Add **`CLERK_SECRET_KEY`** (Clerk **Secret key**, Backend API) to `server/.env` so the API can set default **`public_metadata.role`**, list users, invitations, and admin checks that fall back to Clerk when the JWT omits metadata.
-- Set `DATABASE_URL` to your Neon connection string for Postgres. If omitted, SQLite `server/linkguard.db` is created automatically. The **`users` table has no `role` column** in the ORM; if an older local DB still has that column and inserts fail, delete `server/linkguard.db` or migrate (e.g. `ALTER TABLE users DROP COLUMN role` on Postgres / SQLite 3.35+).
+1. Open the app → paste a URL → **Analyze**.
+2. Optional: set Clerk keys (below), sign in, run another scan to save history.
 
-**Admin (MVP):** set **`public_metadata.role`** to **`admin`** on your user in the Clerk Dashboard (or via Backend API). Default **`user`** can be applied on first API hit. No `users.role` in Postgres—see `docs/clerk-auth-rollout-plan.md`.
+---
+
+## Environment variables
+
+Use the **same Clerk application** for client and server keys.
+
+### Client — `client/.env.local`
+
+| Key | Purpose |
+|-----|---------|
+| `VITE_CLERK_PUBLISHABLE_KEY` | Sign-in, dashboard, favorites, reports. Empty = guest-only scans. |
+| `VITE_API_URL` | Production API base (e.g. `https://api.example.com`). **Leave empty in dev.** |
+
+**Details, examples, and server companion keys:** [client/README.md → Environment variables](client/README.md#environment-variables)
+
+### Server — `server/.env`
+
+| Key | Purpose |
+|-----|---------|
+| `CLERK_ISSUER` | Clerk Frontend API URL (must match JWT `iss`) |
+| `CLERK_JWT_KEY` | Recommended: JWKS public key (PEM) from Clerk Dashboard |
+| `CLERK_SECRET_KEY` | Backend API (roles, admin, invites). **Never** put in Vite. |
+| `GOOGLE_SAFE_BROWSING_API_KEY` | Optional; without it, threat-intel signal is skipped |
+| `DATABASE_URL` | Postgres/Neon; if unset → SQLite `server/linkguard.db` |
+| `CORS_ORIGINS` | Allowed browser origins if API is on another host |
+
+Template with comments: [server/.env.example](server/.env.example)
+
+### Clerk checklist
+
+1. `VITE_CLERK_PUBLISHABLE_KEY` (client) + `CLERK_ISSUER` + `CLERK_SECRET_KEY` (server) from **one** Clerk app.
+2. After sign-in, client calls `GET /api/v1/me` → provisions SQL user + default role.
+3. Admin: set `public_metadata.role` to `admin` in Clerk Dashboard. See [docs/clerk-auth-rollout-plan.md](docs/clerk-auth-rollout-plan.md).
+
+---
+
+## Safety scoring (summary)
+
+- **Score:** `0–100` = **% safe** (penalties subtracted from 100).
+- **Verdicts:** `safe` · `low_risk` · `moderate_risk` · `high_risk` · `dangerous` · `insufficient_data`
+- **Signals (current):** parse, domain age (RDAP), typosquatting, IP host, entropy, shorteners, Safe Browsing  
+- **Removed:** direct SSL/TLS probe (security + false positives)
+
+Weights: `server/app/services/weights.json` (`2026-05-17-v4-safety`). Full rules: [plan.md](plan.md).
+
+---
 
 ## Guest limits
 
-Guests (no `Authorization` bearer) are limited to **3 scans per UTC day per IP**, enforced in the API.
+Guests (no `Authorization` header) get **3 scans per UTC calendar day per IP**. Authenticated scans are stored per user; guest results are not persisted.
+
+---
+
+## Repository layout
+
+```
+LinkGuard/
+├── README.md           ← you are here
+├── plan.md             ← product & engineering plan
+├── client/             ← Vite + React app → client/README.md
+├── server/             ← Flask API
+└── docs/
+    └── clerk-auth-rollout-plan.md
+```
+
+---
+
+## API overview
+
+Prefix: `/api/v1`
+
+| Method | Path | Auth |
+|--------|------|------|
+| `POST` | `/scans` | Optional (guest rate-limited) |
+| `GET` | `/me` | User — bootstrap + DB user row |
+| `GET` | `/me/scans` | User — history |
+| `GET` | `/favorites` | User |
+| `POST` | `/scans/{id}/favorite` | User |
+| `POST` | `/reports` | User |
+| `GET` | `/admin/users` | Admin |
+| `GET` | `/health` | Public |
+
+---
 
 ## Tests
 
@@ -54,6 +165,29 @@ source .venv/bin/activate
 pytest
 ```
 
-## Project docs
+Includes domain-age (RDAP) tests and normalization/scoring coverage.
 
-See `plan.md` for the full product and architecture plan.
+---
+
+## Documentation
+
+| Document | Contents |
+|----------|----------|
+| [plan.md](plan.md) | Vision, scoring model, signals, API, data model, rollout status |
+| [client/README.md](client/README.md) | Front-end setup, routes, env keys, i18n, scripts |
+| [docs/clerk-auth-rollout-plan.md](docs/clerk-auth-rollout-plan.md) | Clerk roles, JWT, lazy defaults |
+
+---
+
+## Reset local database
+
+To wipe local dev data (e.g. after scoring model changes):
+
+```bash
+rm server/linkguard.db
+# restart Flask — tables are recreated via db.create_all()
+```
+
+---
+
+*LinkGuard provides automated signals, not a guarantee. Always verify unexpected links through a trusted channel.*
