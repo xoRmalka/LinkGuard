@@ -119,5 +119,9 @@
   "action.safe.updates": "Keep device and browser updates enabled for defense in depth.",
   "error.generic": "Something went wrong.",
   "nav.favorites": "Favorites",
+  "favorites.signInPrompt": "Sign in to view your saved URLs.",
+  "favorites.loading": "Loading favorites…",
+  "favorites.empty": "You haven't saved any URLs yet. Save a scan from the result page.",
+  "favorites.errorLoad": "Could not load favorites. Try again later.",
   "footer.note": "LinkGuard never claims a link is 100% safe."
 }

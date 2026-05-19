@@ -119,5 +119,9 @@
   "action.safe.updates": "שמרו על עדכוני מכשיר ודפדפן כשכבת הגנה נוספת.",
   "error.generic": "משהו השתבש.",
   "nav.favorites": "מועדפים",
+  "favorites.signInPrompt": "התחברו כדי לצפות בכתובות ששמרתם.",
+  "favorites.loading": "טוען מועדפים…",
+  "favorites.empty": "עדיין לא שמרתם כתובות. אפשר לשמור סריקה מדף התוצאה.",
+  "favorites.errorLoad": "לא ניתן לטעון את המועדפים. נסו שוב מאוחר יותר.",
   "footer.note": "LinkGuard לעולם לא מצהיר שקישור בטוח ב-100%."
 }

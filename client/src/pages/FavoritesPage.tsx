@@ -1,17 +1,18 @@
 import { useEffect, useState } from 'react'
-import { useAuth } from '@clerk/react'
+import { SignInButton, useAuth } from '@clerk/react'
 
 import { useI18n } from '../i18n/I18nProvider'
 import { getFavorites } from '../lib/api'
+import { hasClerkPublishableKey } from '../lib/env'
 import { normalizeVerdict } from '../lib/riskDisplay'
 
 interface FavoriteItem {
   id: string
-  scan_id: string;
-  normalized_url: string;
-  verdict: string;
-  score: number;
-  created_at: string;
+  scan_id: string
+  normalized_url: string
+  verdict: string
+  score: number
+  created_at: string
 }
 
 export function FavoritesPage() {
@@ -30,35 +31,60 @@ export function FavoritesPage() {
 
       try {
         const data = await getFavorites(getToken)
-        setFavorites(data.favorites || data) 
-      } catch (err) {
-        setError('Failed to load favorites.')
+        setFavorites(data.favorites || data)
+        setError(null)
+      } catch {
+        setError(t('favorites.errorLoad'))
       } finally {
         setLoading(false)
       }
     }
 
     fetchFavorites()
-  }, [isSignedIn, getToken])
+  }, [isSignedIn, getToken, t])
 
   if (!isSignedIn) {
     return (
-      <div className="page">
-        <h2>My Favorites</h2>
-        <p>Please sign in to view your saved URLs.</p>
+      <div className="page panel narrow">
+        <h1>{t('nav.favorites')}</h1>
+        <p className="muted">{t('favorites.signInPrompt')}</p>
+        {hasClerkPublishableKey ? (
+          <SignInButton mode="redirect" forceRedirectUrl="/favorites">
+            <button type="button" className="btn">
+              {t('nav.signIn')}
+            </button>
+          </SignInButton>
+        ) : (
+          <p className="muted small">{t('auth.clerkMissing')}</p>
+        )}
       </div>
     )
   }
 
-  if (loading) return <div className="page"><p>Loading favorites...</p></div>
-  if (error) return <div className="page"><p className="danger">{error}</p></div>
+  if (loading) {
+    return (
+      <div className="page">
+        <h1>{t('nav.favorites')}</h1>
+        <p className="muted">{t('favorites.loading')}</p>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="page">
+        <h1>{t('nav.favorites')}</h1>
+        <p className="error">{error}</p>
+      </div>
+    )
+  }
 
   return (
     <div className="page">
-      <h1>{t('nav.favorites') || 'My Favorites'}</h1>
-      
+      <h1>{t('nav.favorites')}</h1>
+
       {favorites.length === 0 ? (
-        <p className="muted">You haven't saved any URLs yet.</p>
+        <p className="muted">{t('favorites.empty')}</p>
       ) : (
         <div className="table-wrap">
           <table className="data-table">
