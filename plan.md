@@ -2,240 +2,244 @@
 
 ## Vision
 
-LinkGuard is a web application that helps users assess whether a URL is likely risky before they click. The client collects a URL, normalizes and validates it, and the backend runs layered checks (technical signals, typosquatting heuristics, and threat-intelligence APIs). Results are presented as a weighted score, a risk band, plain-language explanations, and recommended next steps—never as absolute certainty.
+LinkGuard is a web application that helps users assess whether a URL is likely risky before they click. The client collects a URL, normalizes and validates it, and the backend runs layered checks (technical signals, typosquatting heuristics, domain age via RDAP, and threat-intelligence APIs). Results are presented as a **safety score (0–100%)**, a confidence band, a verdict, plain-language explanations (i18n keys), and recommended next steps—never as absolute certainty.
+
+**Scoring semantics (current):** `score` is **percent safe** — **higher = safer**, **lower = riskier**. Penalties are subtracted from 100 based on per-signal `max_points` in `weights.json`. This replaced the earlier “risk score” model where a higher number meant more danger.
 
 ## Tech Stack
 
 | Layer | Choice |
 |--------|--------|
-| Client | React.js (SPA; Vite + React Router recommended) |
+| Client | React (Vite + React Router) |
 | Server | Python Flask (REST API) |
-| Auth | [Clerk](https://clerk.com/) |
-| Database | [Neon](https://neon.com/) (serverless Postgres) |
-| i18n | Dictionary-based JSON; English default + Hebrew |
-| RTL | Full layout RTL when Hebrew is selected |
+| Auth | [Clerk](https://clerk.com/) (`@clerk/react`, `@clerk/localizations` for EN/HE) |
+| Database | SQLite locally (`server/linkguard.db`) or Neon Postgres via `DATABASE_URL` |
+| i18n | Dictionary-based JSON (`en.json`, `he.json`); explanations/actions via API keys |
+| RTL | Full layout RTL when Hebrew is selected (`I18nProvider` sets `dir` + `lang`) |
 
 ## Confirmed product decisions
 
 | Topic | Decision |
 |--------|----------|
-| Guest scanning | **Allowed** with **3 scans per day per IP**; **scan history only for signed-in users**. |
-| Contributor (MVP) | **Same capabilities as user**; `contributor` role reserved for future features (simplest RBAC). |
-| External APIs (phase 1) | **Google Safe Browsing + inner heuristics** first; URLhaus, VirusTotal, IPQualityScore, CheckPhish in **later phases** (wire with graceful degradation when keys exist). |
-| URL storage | Store **full normalized URL + host** in Neon for dashboards and history. |
-| Clerk roles | **`public_metadata.role`**: **`user`** \| **`admin`** in MVP (**`contributor`** later); lazy default **`user`** on first API hit; hybrid JWT + optional Clerk user fetch; no Neon `users.role` for authz. Details: `docs/clerk-auth-rollout-plan.md`. |
+| Guest scanning | **Allowed** with **3 scans per UTC day per IP**; **scan history only for signed-in users** (guest responses are not persisted). |
+| Contributor (MVP) | **Same capabilities as user**; `contributor` role reserved for future features. |
+| External APIs (phase 1) | **Google Safe Browsing + inner heuristics**; URLhaus, VirusTotal, etc. in **later phases**. |
+| URL storage | Store **full normalized URL + host** when `user_id` is set (authenticated scans). |
+| Clerk roles | **`public_metadata.role`**: `user` \| `admin` in MVP; lazy default `user` on authenticated API hit; **not** stored on SQL `users`. See `docs/clerk-auth-rollout-plan.md`. |
+| Local user row | SQL `users.id` = Clerk `sub`; provisioned on **`GET /api/v1/me`** after sign-in (not on `POST /scans`). |
+| SSL/TLS signal | **Removed** from pipeline (direct connection risk to malicious hosts + false positives); HTTPS still required for meaningful checks elsewhere. |
+| Scoring config | `server/app/services/weights.json` + `WEIGHTS_VERSION` in config (`2026-05-17-v4-safety`). |
 
 ## Core product rules (non-negotiable)
 
-1. **Never claim 100% safety.** Do not say “this link is definitely safe.” Use calibrated language, e.g. “No strong risk indicators were found based on the checks we could run.”
-2. **Insufficient data** is a first-class outcome when APIs fail, quotas are exceeded, or signals are missing—show **Insufficient Data** with explanation and recommended next steps.
-3. **Always** show: explanation (“why this result”), recommended actions, and which signals/sources contributed (including unavailable or skipped checks).
+1. **Never claim 100% safety.** Use calibrated language (e.g. `explanation.safe.*` i18n keys), not “definitely safe.”
+2. **Insufficient data** is a first-class outcome when Safe Browsing is skipped/errors and the score would otherwise look very safe (`insufficient_data` verdict).
+3. **Always** show: explanation keys, recommended action keys, and signal breakdown (including skipped/unknown checks).
+4. **Safe Browsing match** (`concern: true`) → verdict **`dangerous`** regardless of safety %.
 
 ## User roles
 
 | Role | Capabilities (MVP) |
 |------|---------------------|
-| **User** | Submit URLs (within limits), view own scan history, favorites, report URL |
-| **Contributor** | Same as user; role kept for future differentiation |
-| **Admin** | User list with roles, invite user, remove/deactivate user; optional moderation later |
+| **User** | Submit URLs (within limits), view scan history, favorites, report URL |
+| **Contributor** | Same as user (reserved label) |
+| **Admin** | Clerk user list, invite, role patch, deactivate; **reports moderation UI not built** |
 
-**Implementation:** **`public_metadata.role`** (`user` \| `admin` in MVP; **`contributor`** later) is the **only** source of truth for permissions—**not** stored on Neon `users`. Map Clerk `sub` to `users.id` for FKs and optional email cache. On **first authenticated API hit**, if **`role`** is missing, the **server** sets **`user`** via Clerk Backend API (**lazy provisioning**; no webhook required for local). Read **`role`** with **hybrid** JWT claims first, **GET user** fallback (short TTL cache optional). See `docs/clerk-auth-rollout-plan.md`.
+**Implementation:** Role from Clerk **`public_metadata.role`** only. On **`GET /me`**, server runs `ensure_lazy_default_and_resolve` (Clerk Backend API) and **`_ensure_user`** (SQL row). Client calls `/me` from `RootLayout` after sign-in.
 
-## Client pages
+## Client pages (implemented)
 
 ### 1. Home
 
-- Header: LinkGuard branding, **EN / HE** language switcher, Login/Register (Clerk)
-- Hero: simple value proposition
-- Large URL input with **client-side format validation** and **normalization preview**
-- Primary CTA to analyze
-- Example “suspicious-looking” URLs for education (non-malicious patterns)
-- Short “how it works” (normalize → check → score → explain)
+- Header: branding, **EN / HE**, Clerk sign-in/up (`SignInButton` redirect) when configured
+- Hero + URL input + analyze CTA
+- Example URLs; “how it works” copy uses **safety score** wording (EN + HE)
 
 ### 2. Result (after submit)
 
-- **Verdict banner:** Safe (low-risk wording only) | Suspicious | Dangerous | Insufficient Data  
-- **Risk score:** 0–100 (weighted)
-- **Risk level:** 0–24 Low · 25–49 Medium · 50–74 High · 75–100 Critical
-- **Why this result?** Per-signal breakdown (pass / concern / unknown + short text)
-- **Recommended next actions**
-- **Sources/signals used** (ran, skipped, error)
-- **Normalized URL** details (scheme, host, punycode, IP-as-host if applicable)
-- **Report URL** · **Save to favorites** (auth-gated or prompt to sign in)
+- **Verdict banner** (tones: ok / warn / danger / muted) for:
+  - `safe` · `low_risk` · `moderate_risk` · `high_risk` · `dangerous` · `insufficient_data`
+- **Safety score:** 0–100 (higher = safer), label “Safety score” / “ציון בטיחות”
+- **Confidence band:** `safe` · `low_risk` · `moderate_risk` · `high_risk` (aligned with score thresholds)
+- **Why / actions:** resolved from `explanation_keys` / `action_keys` via i18n
+- Collapsible **signals** table (icons, tooltips, per-signal descriptions)
+- **Report URL** · **Save to favorites** (auth-gated; favorite requires `scan_id` from saved scan)
+- Clerk **localization** (`heIL` / `enUS`) via `ClerkProviderWithLocale`
 
 ### 3. Login / Register
 
-- Clerk `<SignIn />` / `<SignUp />` or hosted pages—**open decision:** embedded vs hosted (pick one for MVP consistency)
+- Embedded Clerk `<SignIn />` / `<SignUp />` at `/sign-in/*`, `/sign-up/*` (path routing)
 
-### 4. User dashboard
+### 4. User dashboard (`/dashboard`)
 
-- **Scan history** table: URL (truncated), score, verdict/band, short reason, date—sorted by date descending, paginated
+- Paginated **scan history**: URL, safety %, translated verdict, date
 
-### 5. Admin dashboard
+### 5. Favorites (`/favorites`)
 
-- Users + roles
-- Invite user (email + role)
-- Remove / deactivate user (soft delete + session policy)
+- Lists favorited scans (`GET /api/v1/favorites`); full i18n for loading/empty/sign-in/error
+
+### 6. Admin dashboard (`/admin`)
+
+- Clerk-backed users + roles, invite, deactivate
+- **No** reports inbox yet
 
 ## Localization (EN / HE)
 
-- Default: **English**
-- **Hebrew (עברית):** full **RTL** (`dir="rtl"`), logical CSS (`margin-inline`, `start`/`end`), mirrored header, forms, tables, dialogs
-- Language switcher in header; persist preference (`localStorage` + optional profile field)
-- All user-facing strings in JSON dictionaries (`en.json`, `he.json`)
-- Locale-aware dates and numbers
+- JSON dictionaries; RTL for Hebrew
+- Clerk components localized when locale is `he` (`@clerk/localizations`)
+- Legacy verdict/band values (`safe_low`, `suspicious`, `low`/`medium`/`high`) mapped in `riskDisplay.ts` for old DB rows if any remain
 
-**Quality bar:** Clean component structure, responsive layout, accessible UI (labels, focus, contrast, live regions for async scan).
+## Backend signals (current pipeline)
 
-## Backend validations
+| Signal | Status | Notes |
+|--------|--------|--------|
+| Parse + normalization | Active | Scheme, host, IDN/punycode |
+| Domain age | Active | **RDAP** lookup; TLD allowlist (`com`, `net`, `org`, `io`, `dev`, `app`); &lt;30d = concern; unknown TLD → `unknown` (small penalty) |
+| Typosquatting / homograph | Active | Brand Levenshtein + mixed-script |
+| IP-as-host | Active | Raw IP in host |
+| Entropy | Active | High path/query entropy heuristic |
+| Link shorteners | Active | Known shortener list |
+| Google Safe Browsing | Active | Skipped if no API key; match → `dangerous` |
+| **SSL/TLS** | **Removed** | Commented out in `pipeline.py`; do not re-enable without sandboxed fetch |
 
-### Inner (computed) signals
+## Weighted scoring (safety model)
 
-| Signal | Notes |
-|--------|--------|
-| Parse + normalization | Scheme, host, path, IDN/punycode, sensible defaults |
-| Domain age | RDAP/WHOIS with caching and rate limits |
-| SSL/TLS | Validity, hostname match, chain, expiry |
-| Typosquatting / homograph | Brand distance heuristics; confusable / mixed-script detection |
-| IP-as-host | Literal IP in host vs domain |
-| Entropy | High-randomness path/query heuristic |
-| Link shorteners | Detect known shorteners; optional expand-once with strict limits |
+**Config:** `server/app/services/weights.json` (version `2026-05-17-v4-safety`).
 
-### External APIs (phased)
+| Signal | max_points (penalty cap) |
+|--------|--------------------------|
+| safe_browsing | 40 |
+| domain_age | 30 |
+| typosquatting | 18 |
+| ip_host | 5 |
+| entropy | 3 |
+| shortener | 2 |
+| parse | 2 |
 
-| Phase | APIs |
-|--------|------|
-| **1** | Google Safe Browsing + all inner signals above |
-| **2+** | URLhaus, VirusTotal, IPQualityScore, CheckPhish—each adapter returns `{ ok \| error \| skipped }` so the pipeline never fails silently |
+**Per-signal penalty:**
 
-**Resilience:** Missing keys or HTTP errors contribute to partial results or **Insufficient Data**, never a blank screen.
+- `concern: true` → full `max_points`
+- `status: error` or `skipped` → 15% of max (uncertainty)
+- `status: unknown` → 20% of max
+- else → 0
 
-## Weighted scoring
+**Aggregate:** `score = round(max(0, 100 - sum(penalties)))` capped at 100.
 
-- **Versioned config** (JSON/YAML): per-signal weight, caps, and behavior for `unknown` (document whether unknown slightly increases uncertainty or stays neutral)
-- Output: `score` (0–100), `band`, `verdict`, `breakdown[]`, `weights_version`
-- No secrets or raw API keys in client responses; redact sensitive logs
+**Bands (field `risk_band`):**
 
-## Suggested API routes (Flask)
+| Safety % | Band |
+|----------|------|
+| ≥ 85 | `safe` |
+| ≥ 70 | `low_risk` |
+| ≥ 50 | `moderate_risk` |
+| &lt; 50 | `high_risk` |
 
-Prefix: `/api/v1` (JSON). Mutations and history require **Clerk JWT** verified server-side. Guest (unauthenticated) scans: **3 per IP per calendar day** (enforce server-side; return `429` with clear message when exceeded).
+**Verdicts (field `verdict`):**
+
+| Condition | Verdict |
+|-----------|---------|
+| Safe Browsing `concern` | `dangerous` |
+| Insufficient-data rules | `insufficient_data` |
+| Else by score | `safe` / `low_risk` / `moderate_risk` / `high_risk` (same thresholds as bands) |
+
+**API payload:** `score`, `risk_band`, `verdict`, `breakdown[]` (each signal includes `points` = penalty), `weights_version`, `explanation_keys[]`, `action_keys[]`, `insufficient_reasons[]` (English server strings today).
+
+## API routes (implemented)
+
+Prefix: `/api/v1`. Guest scans: **3 per IP per UTC day** (`429` when exceeded).
 
 | Method | Path | Auth | Description |
-|--------|------|------|---------------|
-| POST | `/scans` | Optional / rate-limited | Body `{ url }` — run or enqueue scan |
-| GET | `/scans/{id}` | Owner or Admin | Full result |
-| GET | `/me` | User+ | Session bootstrap; resolves Clerk `public_metadata.role` (lazy default) |
+|--------|------|------|-------------|
+| POST | `/scans` | Optional | Run pipeline; **persist** only when JWT present |
+| GET | `/scans/{id}` | User+ (owner or admin) | Full scan |
+| GET | `/me` | User+ | **Provision SQL user** + lazy Clerk role; returns `{ user_id, role }` |
 | GET | `/me/scans` | User+ | Paginated history |
-| POST | `/scans/{id}/favorite` | User+ | Favorite toggle |
-| POST | `/reports` | User+ | Report URL + optional note |
-| GET | `/admin/users` | Admin | List users + roles |
+| POST | `/scans/{id}/favorite` | User+ | Toggle favorite |
+| GET | `/favorites` | User+ | List favorited scans |
+| POST | `/reports` | User+ | Create report (`status: open`); **no list/triage API** |
+| GET | `/admin/users` | Admin | Clerk user list + roles |
 | POST | `/admin/invites` | Admin | Invite |
-| DELETE | `/admin/users/{id}` | Admin | Deactivate |
+| PATCH | `/admin/users/{id}` | Admin | Patch Clerk `public_metadata.role` |
+| DELETE | `/admin/users/{id}` | Admin | Deactivate (Clerk + soft local user) |
 | GET | `/health` | Public | Liveness |
 
-## Data model (Neon / Postgres)
+## Data model (SQLAlchemy)
 
 **users**
 
-- `id` TEXT PK (= Clerk `sub`)
-- `email` TEXT (optional cache from Clerk webhooks)
-- `created_at`, `updated_at`, `deleted_at`
-- **No `role` column** — app role lives in Clerk **`public_metadata`** only; see `docs/clerk-auth-rollout-plan.md`.
+- `id` TEXT PK (= Clerk `sub`), `email`, timestamps, `deleted_at`
+- **No `role` column** — Clerk only
 
 **scans**
 
-- `id` UUID PK
-- `user_id` UUID NULLABLE (null = anonymous scan row if you store anonymous results temporarily—**or** omit persistence for anonymous and only return JSON; if persisting for abuse analytics, use hashed fingerprint instead of full URL for anon—**recommend:** persist full URL + host only when `user_id` is set; for anonymous return in-memory only unless compliance requires otherwise)
-- `input_url` TEXT, `normalized_url` TEXT, `host` TEXT
-- `score` INT, `verdict` ENUM, `risk_band` ENUM
-- `breakdown` JSONB
-- `weights_version` TEXT
-- `created_at` TIMESTAMPTZ
-- Index: `(user_id, created_at DESC)`
+- `user_id` FK → `users.id` (required for saved scans)
+- `input_url`, `normalized_url`, `host`, `score`, `verdict`, `risk_band`, `breakdown` JSON, `weights_version`, `created_at`
 
 **favorites**
 
-- `user_id`, `scan_id` (or normalized URL), `created_at`; UNIQUE(user_id, target)
+- `user_id`, `scan_id`; UNIQUE(`user_id`, `scan_id`)
 
 **reports**
 
-- `id`, `user_id`, `url`, `scan_id` NULL, `note`, `status`, `created_at`
+- `user_id`, `url`, optional `scan_id`, optional `note`, `status` (default `open`), `created_at`
 
-**rate_limits** (MVP)
+**guest_scan_days**
 
-- **Guests:** count scans by **client IP**, cap **3 per calendar day** (document timezone, e.g. UTC midnight).
-- **Authenticated users:** optional higher/default tier (define separately); still track if abuse protection is needed.
+- IP + UTC day + count for guest rate limit
 
-*Refine anonymous persistence in implementation to match privacy policy; table above allows “history only when logged in” by only linking durable history to `user_id`.*
-
-## Repository layout (suggested)
+## Repository layout
 
 ```
 LinkGuard/
   plan.md
+  docs/clerk-auth-rollout-plan.md
   client/          # Vite + React
   server/          # Flask
 ```
 
-## Flask structure (suggested)
-
-```
-server/
-  app/
-    __init__.py
-    routes/          # scans, admin, health
-    services/
-      normalize.py
-      signals/
-      integrations/  # safebrowsing (phase 1); stubs for others
-      scoring.py
-    models/
-    auth/            # Clerk JWT
-  migrations/        # Alembic
-  tests/
-```
-
-## Client structure (suggested)
-
-```
-client/src/
-  app/               # routes
-  components/
-  features/scan/, dashboard/, admin/
-  i18n/              # en.json, he.json, provider
-  lib/               # api client, url helpers
-```
-
 ## Environment variables
 
-- Clerk: publishable key (client), secret + JWKS (server)
-- Neon: `DATABASE_URL`
-- `GOOGLE_SAFE_BROWSING_API_KEY` (phase 1)
-- Later: URLhaus, VirusTotal, IPQualityScore, CheckPhish keys as enabled
+| Variable | Purpose |
+|----------|---------|
+| `VITE_CLERK_PUBLISHABLE_KEY` | Client Clerk |
+| `VITE_API_URL` | API base (optional; defaults same origin) |
+| `CLERK_ISSUER`, `CLERK_JWT_KEY`, `CLERK_SECRET_KEY` | Server JWT + Backend API |
+| `DATABASE_URL` | Postgres (else SQLite `server/linkguard.db`) |
+| `GOOGLE_SAFE_BROWSING_API_KEY` | Threat intel (skip signal if missing) |
+| `CORS_ORIGINS` | Dev client origins |
 
-## Deliverables
+## Deliverables & status
 
-1. Runnable monorepo: `client` + `server` + README
-2. All core pages: Home, Result, Auth (Clerk), User dashboard, Admin dashboard
-3. Reusable UI components; polished demo-ready visual design
-4. Full EN/HE + RTL verification
-5. Weighted scoring with visible breakdown and config versioning
-6. Tests: URL normalization, scoring aggregation, mocked external HTTP
+| Item | Status |
+|------|--------|
+| Monorepo client + server + README | Done |
+| Home, Result, Auth, Dashboard, Favorites, Admin | Done |
+| EN/HE + RTL + Clerk HE localization | Done |
+| Safety scoring v4 + domain age RDAP | Done |
+| Guest limit + auth history | Done |
+| Favorites list + toggle | Done |
+| Reports create-only | Done (moderation later) |
+| Admin users/roles | Done |
+| Tests (`test_domain_age.py`, normalization, etc.) | Partial |
+| Admin reports UI | **Not started** |
+| Expand RDAP TLD coverage (e.g. `.il`) | **Future** |
+| `insufficient_reasons` i18n on server | **Future** |
 
-## Phased rollout
+## Phased rollout (updated)
 
-1. **A:** React shell, i18n + RTL, Flask health + mock scan; Neon schema; Clerk webhook or sync for `users`
-2. **B:** Normalization + inner signals + Safe Browsing; Result page end-to-end
-3. **C:** Auth-gated history, favorites, reports; anonymous limit enforcement
-4. **D:** Admin invites/removals; additional API integrations
-5. **E:** Observability, abuse hardening, copy/legal review for “never 100% safe” messaging
+1. **A:** React shell, i18n + RTL, Flask health, schema, Clerk — **done**
+2. **B:** Normalization, inner signals, Safe Browsing, Result page — **done**
+3. **C:** Auth history, favorites, reports API, guest limits — **done** (reports UI pending)
+4. **D:** Safety scoring v4, domain age RDAP, SSL removed, client verdict alignment — **done**
+5. **E:** Admin reports moderation, more TLDs / threat APIs, observability, copy/legal review — **next**
 
-## Open decisions (non-blocking)
+## Open decisions
 
-- Clerk **embedded vs hosted** auth pages
-- Whether to **persist anonymous scans** at all (vs. ephemeral response only)
-- Contributor **future** capabilities (queue, reputation, etc.)
+- Whether to add **admin reports inbox** (list, status transitions, assignee)
+- **Persist anonymous scans** or keep ephemeral-only (current: ephemeral for guests)
+- **Contributor** future capabilities
+- Optional: retry/`getMe` hardening so scan never runs before user row exists (today relies on `/me` after sign-in)
 
 ---
 
-*Plan version: 1.2 — guest limit: 3 scans per IP per day.*
+*Plan version: 2.0 — safety score model, new verdicts/bands, SSL removed, RDAP domain age, `/me` user provisioning, favorites page, Clerk i18n.*
