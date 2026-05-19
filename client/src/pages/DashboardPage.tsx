@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { Link, Navigate } from 'react-router-dom'
-import { useAuth } from '@clerk/react'
+import { Navigate } from 'react-router-dom'
+import { SignInButton, useAuth } from '@clerk/react'
 
 import { useI18n } from '../i18n/I18nProvider'
 import { listMyScans } from '../lib/api'
@@ -42,9 +42,15 @@ function DashboardInner() {
     return (
       <div className="page panel narrow">
         <p className="muted">{t('result.signInToSave')}</p>
-        <Link className="btn" to="/sign-in">
-          {t('nav.signIn')}
-        </Link>
+        {hasClerkPublishableKey ? (
+          <SignInButton mode="redirect" forceRedirectUrl="/dashboard">
+            <button type="button" className="btn">
+              {t('nav.signIn')}
+            </button>
+          </SignInButton>
+        ) : (
+          <p className="muted small">{t('auth.clerkMissing')}</p>
+        )}
       </div>
     )
   }
