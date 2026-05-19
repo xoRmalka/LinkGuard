@@ -190,26 +190,31 @@ a {
 .signal-icon-wrap {
   position: relative;
   display: inline-flex;
-  cursor: default;
+  cursor: pointer;
 }
 
 .signal-icon-wrap::after {
   content: attr(data-tooltip);
   position: absolute;
-  bottom: calc(100% + 6px);
-  left: 50%;
-  transform: translateX(-50%);
+  inset-inline-start: calc(100% + 10px);
+  inset-block-start: 50%;
+  transform: translateY(-50%);
   background: #1e2e3d;
   color: var(--text);
   border: 1px solid var(--border);
   border-radius: 8px;
-  padding: 5px 9px;
+  padding: 6px 10px;
   font-size: 0.78rem;
-  white-space: nowrap;
+  line-height: 1.35;
+  white-space: normal;
+  text-align: start;
+  width: max-content;
+  max-width: min(16rem, 70vw);
   pointer-events: none;
   opacity: 0;
   transition: opacity 0.15s;
-  z-index: 10;
+  z-index: 50;
+  box-shadow: var(--shadow);
 }
 
 .signal-icon-wrap:hover::after {
@@ -450,6 +455,40 @@ a {
   overflow: auto;
   border-radius: 12px;
   border: 1px solid var(--border);
+}
+
+/* Signals table: allow icon tooltips to escape (default table-wrap clips overflow) */
+.table-scroll-x {
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.table-wrap--signals {
+  overflow: visible;
+}
+
+.data-table--signals {
+  min-width: 0;
+}
+
+.data-table--signals td:first-child {
+  overflow: visible;
+  position: relative;
+  width: 2.5rem;
+  vertical-align: middle;
+}
+
+.panel:has(.table-wrap--signals) {
+  overflow: visible;
+}
+
+@media (max-width: 520px) {
+  .signal-icon-wrap::after {
+    inset-inline-start: 50%;
+    inset-block-start: calc(100% + 8px);
+    transform: translateX(-50%);
+  }
 }
 
 .data-table {

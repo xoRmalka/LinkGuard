@@ -44,7 +44,7 @@ function SignalIcon({ status, concern, tooltip }: { status: string; concern?: bo
   }
 
   return (
-    <span className="signal-icon-wrap" data-tooltip={tooltip}>
+    <span className="signal-icon-wrap" data-tooltip={tooltip} title={tooltip}>
       {svg}
     </span>
   )
@@ -145,8 +145,9 @@ function ResultBody({
           {showSignals ? t('result.signals.hide') : t('result.signals.show')}
         </button>
         {showSignals && (
-          <div className="table-wrap" style={{ marginTop: '0.75rem' }}>
-            <table className="data-table">
+          <div className="table-scroll-x" style={{ marginTop: '0.75rem' }}>
+            <div className="table-wrap table-wrap--signals">
+            <table className="data-table data-table--signals">
               <thead>
                 <tr>
                   <th></th>
@@ -174,6 +175,7 @@ function ResultBody({
                 })}
               </tbody>
             </table>
+            </div>
           </div>
         )}
       </section>
