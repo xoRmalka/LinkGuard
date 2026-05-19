@@ -10,7 +10,7 @@ async function parseJson(res: Response): Promise<unknown> {
   }
 }
 
-/** Calls `GET /api/v1/me` so the server runs lazy default `public_metadata.role` in Clerk. */
+/** Calls `GET /api/v1/me` to provision the local user row and lazy-default Clerk `public_metadata.role`. */
 export async function getMe(getToken: () => Promise<string | null>): Promise<{
   user_id: string
   role: string

@@ -52,8 +52,9 @@ def _ensure_user(payload: dict) -> User:
 @bp.get("/me")
 @require_auth
 def get_me():
-    """Lightweight session bootstrap: runs lazy default `public_metadata.role` and returns resolved role."""
+    """Session bootstrap: provision local user, lazy default Clerk role, return resolved role."""
     payload = request.clerk_user  # type: ignore[attr-defined]
+    _ensure_user(payload)
     role = getattr(request, "clerk_effective_role", "user")
     return jsonify({"user_id": str(payload.get("sub")), "role": role})
 
@@ -106,7 +107,6 @@ def create_scan():
 
     if payload:
         uid = str(payload.get("sub"))
-        _ensure_user(payload)
         scan = Scan(
             user_id=uid,
             input_url=result["input_url"],
