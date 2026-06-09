@@ -95,7 +95,7 @@
   "admin.invite": "Send invitation",
   "admin.emailPlaceholder": "email@domain.com",
   "admin.inviteSent": "Invitation sent. Check the inbox (and Clerk Dashboard if needed).",
-  "admin.forbidden": "You need admin access (Clerk public metadata role) to use this page.",
+  "admin.forbidden": "You need admin access to use this page.",
   "admin.actions": "Actions",
   "admin.save": "Save role",
   "admin.delete": "Remove",
@@ -123,5 +123,9 @@
   "favorites.loading": "Loading favorites…",
   "favorites.empty": "You haven't saved any URLs yet. Save a scan from the result page.",
   "favorites.errorLoad": "Could not load favorites. Try again later.",
+  "admin.reports": "Reports",
+  "admin.reportsEmpty": "No user reports yet.",
+  "admin.approve": "Approve",
+  "admin.reject": "Reject",
   "footer.note": "LinkGuard never claims a link is 100% safe."
 }

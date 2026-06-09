@@ -198,3 +198,31 @@ export async function getFavorites(getToken: () => Promise<string | null>) {
   }
   return res.json()
 }
+
+export async function getAdminReports(token: string) {
+  if (!token) throw new Error('no token')
+  const res = await fetch(`${base()}/api/v1/admin/reports`, {
+    method: 'GET',
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error((err as { message?: string }).message || 'admin reports fetch failed')
+  }
+  return res.json()
+}
+
+export async function deleteAdminReport(token: string, reportId: string): Promise<void> {
+  if (!token) throw new Error('no token')
+  const res = await fetch(
+    `${base()}/api/v1/admin/reports/${encodeURIComponent(reportId)}`,
+    {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` },
+    }
+  )
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error((err as { message?: string }).message || 'delete failed')
+  }
+}

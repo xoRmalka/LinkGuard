@@ -123,5 +123,9 @@
   "favorites.loading": "טוען מועדפים…",
   "favorites.empty": "עדיין לא שמרתם כתובות. אפשר לשמור סריקה מדף התוצאה.",
   "favorites.errorLoad": "לא ניתן לטעון את המועדפים. נסו שוב מאוחר יותר.",
+  "admin.reports": "דוחות",
+  "admin.reportsEmpty": "אין דיווחי משתמשים עדיין.",
+  "admin.approve": "אישור",
+  "admin.reject": "דחייה",
   "footer.note": "LinkGuard לעולם לא מצהיר שקישור בטוח ב-100%."
 }

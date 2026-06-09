@@ -40,9 +40,14 @@ export function Header() {
                 {t('nav.favorites')}
               </NavLink>
               {showAdmin ? (
-                <NavLink to="/admin" className="nav-link">
-                  {t('nav.admin')}
-                </NavLink>
+                <>
+                  <NavLink to="/admin" className="nav-link" end>
+                    {t('nav.admin')}
+                  </NavLink>
+                  <NavLink to="/admin/reports" className="nav-link">
+                    {t('admin.reports')}
+                  </NavLink>
+                </>
               ) : null}
             </Show>
           ) : null}

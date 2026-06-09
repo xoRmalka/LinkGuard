@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 
 import { RootLayout } from '../layouts/RootLayout'
 import { AdminPage } from '../pages/AdminPage'
+import { AdminReportsPage } from '../pages/AdminReportsPage'
 import { DashboardPage } from '../pages/DashboardPage'
 import { HomePage } from '../pages/HomePage'
 import { ResultPage } from '../pages/ResultPage'
@@ -19,6 +20,7 @@ export function AppRoutes() {
         <Route path="sign-up/*" element={<SignUpPage />} />
         <Route path="dashboard" element={<DashboardPage />} />
         <Route path="admin" element={<AdminPage />} />
+        <Route path="admin/reports" element={<AdminReportsPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
         <Route path="/favorites" element={<FavoritesPage />} />
       </Route>
