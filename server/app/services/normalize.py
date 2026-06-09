@@ -60,7 +60,14 @@ def normalize_url(raw: str) -> NormalizeResult:
             False,
         )
 
-    host = parts.hostname
+    try:
+        host = parts.hostname
+        port = parts.port
+    except ValueError:
+        return NormalizeResult(
+            False, "invalid_port", raw, None, None, None, None, False, False
+        )
+
     if not host:
         return NormalizeResult(
             False, "missing_host", raw, None, None, None, None, False, False
@@ -81,9 +88,11 @@ def normalize_url(raw: str) -> NormalizeResult:
 
     is_ip = _host_is_ip(host)
 
-    netloc = host
-    if parts.port and parts.port not in (80, 443):
-        netloc = f"{host}:{parts.port}"
+    host_for_netloc = f"[{host}]" if ":" in host else host
+    default_port = 443 if scheme == "https" else 80
+    netloc = host_for_netloc
+    if port and port != default_port:
+        netloc = f"{host_for_netloc}:{port}"
 
     path = parts.path or "/"
     query_pairs = parse_qsl(parts.query, keep_blank_values=True)
