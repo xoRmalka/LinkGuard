@@ -2,7 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 
 import { RootLayout } from '../layouts/RootLayout'
 import { AdminPage } from '../pages/AdminPage'
-import AdminReportsPage from '../pages/AdminReportsPage'
+import { AdminReportsPage } from '../pages/AdminReportsPage'
 import { DashboardPage } from '../pages/DashboardPage'
 import { HomePage } from '../pages/HomePage'
 import { ResultPage } from '../pages/ResultPage'
