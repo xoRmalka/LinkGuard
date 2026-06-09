@@ -8,9 +8,21 @@ import { postScan } from '../lib/api'
 import type { ScanPayload } from '../lib/types'
 
 const EXAMPLES = [
-  { labelKey: 'home.example1' as const, url: 'https://www.wikipedia.org/wiki/Phishing' },
-  { labelKey: 'home.example2' as const, url: 'https://bit.ly/example-demo' },
-  { labelKey: 'home.example3' as const, url: 'https://192.0.2.1/login' },
+  {
+    labelKey: 'home.example1' as const,
+    descriptionKey: 'home.example1.desc' as const,
+    url: 'https://www.wikipedia.org/wiki/Phishing',
+  },
+  {
+    labelKey: 'home.example2' as const,
+    descriptionKey: 'home.example2.desc' as const,
+    url: 'https://bit.ly/example-demo',
+  },
+  {
+    labelKey: 'home.example3' as const,
+    descriptionKey: 'home.example3.desc' as const,
+    url: 'https://192.0.2.1/login',
+  },
 ]
 
 function HomeContent({
@@ -23,6 +35,12 @@ function HomeContent({
   const [url, setUrl] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  function selectExample(exampleUrl: string) {
+    setUrl(exampleUrl)
+    setError(null)
+    requestAnimationFrame(() => document.getElementById('url-input')?.focus())
+  }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -96,23 +114,25 @@ function HomeContent({
 
       <section className="panel">
         <h2>{t('home.examplesTitle')}</h2>
-        <ul className="examples">
+        <p className="muted examples-intro">{t('home.examplesIntro')}</p>
+        <div className="examples">
           {EXAMPLES.map((ex) => (
-            <li key={ex.url}>
+            <article className="example-card" key={ex.url}>
+              <div>
+                <h3>{t(ex.labelKey)}</h3>
+                <p>{t(ex.descriptionKey)}</p>
+              </div>
+              <code className="example-card__url">{ex.url}</code>
               <button
                 type="button"
-                className="linkish"
-                onClick={() => {
-                  setUrl(ex.url)
-                  setError(null)
-                }}
+                className="btn btn--ghost example-card__action"
+                onClick={() => selectExample(ex.url)}
               >
-                {t(ex.labelKey)}
+                {t('home.example.use')}
               </button>
-              <span className="muted small"> — {ex.url}</span>
-            </li>
+            </article>
           ))}
-        </ul>
+        </div>
       </section>
     </div>
   )
