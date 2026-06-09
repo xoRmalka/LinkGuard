@@ -57,6 +57,13 @@ def aggregate_score(signals: list[dict], weights_version: str) -> dict[str, Any]
     # Convert penalty to safety score: Start at 100% safe, subtract penalties
     safety_score = int(round(max(0.0, 100.0 - total_penalty)))
 
+    sb = next((s for s in signals if s.get("id") == "safe_browsing"), None)
+    sb_threat = bool(sb and sb.get("concern"))
+
+    # A known threat match must override the weighted heuristic score.
+    if sb_threat:
+        safety_score = min(safety_score, 20)
+
     # Risk bands based on safety percentage (higher = safer)
     if safety_score >= 85:
         band = "safe"
@@ -68,7 +75,6 @@ def aggregate_score(signals: list[dict], weights_version: str) -> dict[str, Any]
         band = "high_risk"
 
     # Check for insufficient data conditions
-    sb = next((s for s in signals if s.get("id") == "safe_browsing"), None)
     sb_skipped = sb and sb.get("status") == "skipped"
     sb_error = sb and sb.get("status") == "error"
 
@@ -83,7 +89,7 @@ def aggregate_score(signals: list[dict], weights_version: str) -> dict[str, Any]
 
     # Determine verdict based on safety score
     # Safe Browsing concern overrides everything
-    if next((s for s in signals if s.get("id") == "safe_browsing" and s.get("concern")), None):
+    if sb_threat:
         verdict = "dangerous"
     elif insufficient:
         verdict = "insufficient_data"
