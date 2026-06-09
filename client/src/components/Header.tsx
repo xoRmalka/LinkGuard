@@ -23,7 +23,7 @@ export function Header() {
     <header className="site-header">
       <div className="site-header__inner">
         <Link to="/" className="brand">
-          <span className="brand__mark" aria-hidden />
+          <img src="/logo.svg" alt="" aria-hidden width={80} height={75} className="brand__logo" />
           <span className="brand__text">{t('brand')}</span>
         </Link>
 

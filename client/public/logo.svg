@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 170" fill="none">
+  <!-- Shield -->
+  <path d="M75 10 L132 30 L132 92 Q132 134 75 154 Q18 134 18 92 L18 30 Z"
+        stroke="#d5dee8" stroke-width="8" stroke-linejoin="round"/>
+
+  <!-- URL bar -->
+  <rect x="10" y="75" width="110" height="28" rx="14"
+        fill="#0b1014" stroke="#d5dee8" stroke-width="6"/>
+
+  <!-- https:// text -->
+  <text x="16" y="96"
+        font-family="'Courier New', Courier, monospace"
+        font-size="17" font-weight="700" fill="#f2f7fb">https://</text>
+
+  <!-- Magnifying glass body -->
+  <circle cx="130" cy="89" r="24" fill="#0b1014" stroke="#d5dee8" stroke-width="6.5"/>
+
+  <!-- Checkmark inside magnifier -->
+  <path d="M119 89 L126 96 L143 77"
+        stroke="#3ee6b0" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Magnifying glass handle -->
+  <line x1="148" y1="107" x2="164" y2="123"
+        stroke="#d5dee8" stroke-width="7" stroke-linecap="round"/>
+</svg>
