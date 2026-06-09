@@ -41,7 +41,7 @@ export function Header() {
               </NavLink>
               {showAdmin ? (
                 <>
-                  <NavLink to="/admin" className="nav-link">
+                  <NavLink to="/admin" className="nav-link" end>
                     {t('nav.admin')}
                   </NavLink>
                   <NavLink to="/admin/reports" className="nav-link">
