@@ -82,10 +82,11 @@ def aggregate_score(signals: list[dict], weights_version: str) -> dict[str, Any]
     reasons: list[str] = []
     if sb_skipped:
         reasons.append("Threat intelligence (Google Safe Browsing) was not queried (missing API key).")
-    if sb_error and safety_score > 80:
-        # Only mark insufficient if we'd otherwise say it's safe but can't verify
-        insufficient = True
+    if sb_error:
         reasons.append("Google Safe Browsing could not be reached or returned an error.")
+    if (sb_skipped or sb_error) and safety_score > 80:
+        # Do not present a very safe-looking result when threat intelligence was unavailable.
+        insufficient = True
 
     # Determine verdict based on safety score
     # Safe Browsing concern overrides everything
