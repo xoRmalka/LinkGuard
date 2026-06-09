@@ -64,6 +64,17 @@ function ResultBody({
   const [showSignals, setShowSignals] = useState(false)
 
   const verdict: Verdict = useMemo(() => scan.verdict, [scan.verdict])
+  const notableSignals = useMemo(
+    () =>
+      (scan.breakdown || []).filter(
+        (row) =>
+          row.concern ||
+          row.status === 'skipped' ||
+          row.status === 'unknown' ||
+          row.status === 'error'
+      ),
+    [scan.breakdown]
+  )
 
   async function onFavorite() {
     if (!scan.scan_id || !getToken) return
@@ -99,6 +110,48 @@ function ResultBody({
     <div className="page result">
       <VerdictBanner verdict={verdict} />
       <ScoreCard score={scan.score} band={scan.risk_band} />
+
+      <section className="panel findings-panel">
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">{t('result.findings.eyebrow')}</p>
+            <h2>{t('result.findings.title')}</h2>
+          </div>
+          <span className="findings-count">
+            {notableSignals.length > 0
+              ? `${notableSignals.length} ${
+                  notableSignals.length === 1
+                    ? t('result.findings.count.one')
+                    : t('result.findings.count.many')
+                }`
+              : t('result.findings.clear')}
+          </span>
+        </div>
+
+        {notableSignals.length > 0 ? (
+          <ul className="findings-list">
+            {notableSignals.map((row) => {
+              const statusText =
+                row.status === 'skipped'
+                  ? t('signal.status.skipped')
+                  : row.status === 'unknown' || row.status === 'error'
+                    ? t('signal.status.unknown')
+                    : t(`signal.${row.id}.finding` as Parameters<typeof t>[0])
+              return (
+                <li className={row.concern ? 'finding finding--concern' : 'finding'} key={row.id}>
+                  <SignalIcon status={row.status} concern={row.concern} tooltip={statusText} />
+                  <span>
+                    <strong>{t(`signal.${row.id}` as Parameters<typeof t>[0]) || row.id}</strong>
+                    <span>{statusText}</span>
+                  </span>
+                </li>
+              )
+            })}
+          </ul>
+        ) : (
+          <p className="findings-empty">{t('result.findings.none')}</p>
+        )}
+      </section>
 
       <section className="panel">
         <h2>{t('result.why')}</h2>
