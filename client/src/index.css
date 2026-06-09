@@ -95,12 +95,9 @@ a {
   color: var(--heading);
 }
 
-.brand__mark {
-  width: 12px;
-  height: 12px;
-  border-radius: 4px;
-  background: linear-gradient(135deg, var(--accent), #2aa6ff);
-  box-shadow: 0 0 24px rgba(62, 230, 176, 0.45);
+.brand__logo {
+  display: block;
+  flex-shrink: 0;
 }
 
 .site-nav {
