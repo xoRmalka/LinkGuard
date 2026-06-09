@@ -204,6 +204,57 @@ def create_report():
     db.session.commit()
     return jsonify({"id": r.id, "status": r.status}), 201
 
+
+@bp.get("/admin/reports")
+@require_auth
+def admin_list_reports():
+    """List all reports for admins, including scan score and normalized_url when available."""
+    is_admin = getattr(request, "clerk_effective_role", None) == "admin"
+    if not is_admin:
+        return jsonify({"error": "forbidden", "message": "Admin role required."}), 403
+
+    rows = (
+        db.session.query(Report, Scan)
+        .outerjoin(Scan, Report.scan_id == Scan.id)
+        .order_by(Report.created_at.desc())
+        .all()
+    )
+
+    items = []
+    for report, scan in rows:
+        items.append(
+            {
+                "id": report.id,
+                "user_id": report.user_id,
+                "url": report.url,
+                "scan_id": report.scan_id,
+                "note": report.note,
+                "status": report.status,
+                "created_at": report.created_at.isoformat() if report.created_at else None,
+                "score": scan.score if scan else None,
+                "normalized_url": scan.normalized_url if scan else None,
+            }
+        )
+
+    return jsonify({"items": items})
+
+
+@bp.delete("/admin/reports/<report_id>")
+@require_auth
+def admin_delete_report(report_id: str):
+    """Delete a specific report (admin only)."""
+    is_admin = getattr(request, "clerk_effective_role", None) == "admin"
+    if not is_admin:
+        return jsonify({"error": "forbidden", "message": "Admin role required."}), 403
+
+    r = Report.query.filter_by(id=report_id).first()
+    if not r:
+        return jsonify({"error": "not_found", "message": "Report not found."}), 404
+
+    db.session.delete(r)
+    db.session.commit()
+    return jsonify({"deleted": True}), 200
+
 @bp.get("/favorites")
 @require_auth
 def list_my_favorites():
