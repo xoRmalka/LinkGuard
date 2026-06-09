@@ -33,3 +33,26 @@ def test_clean_safe_browsing_result_keeps_regular_score():
     assert result["score"] == 100
     assert result["risk_band"] == "safe"
     assert result["verdict"] == "safe"
+
+
+def test_skipped_safe_browsing_prevents_safe_verdict():
+    result = aggregate_score(
+        _signals({"id": "safe_browsing", "status": "skipped", "concern": False}),
+        "test",
+    )
+
+    assert result["score"] > 80
+    assert result["verdict"] == "insufficient_data"
+    assert result["insufficient"] is True
+    assert result["insufficient_reasons"]
+
+
+def test_safe_browsing_error_prevents_safe_verdict():
+    result = aggregate_score(
+        _signals({"id": "safe_browsing", "status": "error", "concern": False}),
+        "test",
+    )
+
+    assert result["score"] > 80
+    assert result["verdict"] == "insufficient_data"
+    assert result["insufficient"] is True
