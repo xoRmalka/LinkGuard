@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { SignInButton, useAuth } from '@clerk/react'
 
 import { useI18n } from '../i18n/I18nProvider'
-import { getFavorites } from '../lib/api'
+import { getFavorites, removeFavorite } from '../lib/api'
 import { hasClerkPublishableKey } from '../lib/env'
 import { normalizeVerdict } from '../lib/riskDisplay'
 
@@ -93,15 +93,27 @@ export function FavoritesPage() {
                 <th>{t('dashboard.col.url')}</th>
                 <th>{t('dashboard.col.score')}</th>
                 <th>{t('dashboard.col.verdict')}</th>
+                <th></th>
               </tr>
             </thead>
             <tbody>
               {favorites.map((fav) => (
                 <tr key={fav.id}>
                   <td className="mono">{fav.normalized_url}</td>
-                  <td>{fav.score}%</td>
+                  <td>{fav.verdict === 'insufficient_data' ? '—' : `${fav.score}%`}</td>
                   <td>
                     {t(`result.verdict.${normalizeVerdict(fav.verdict)}` as Parameters<typeof t>[0])}
+                  </td>
+                  <td>
+                    <button
+                      className="btn btn--ghost btn--sm"
+                      onClick={async () => {
+                        await removeFavorite(() => getToken(), fav.scan_id)
+                        setFavorites((prev) => prev.filter((x) => x.id !== fav.id))
+                      }}
+                    >
+                      {t('common.remove')}
+                    </button>
                   </td>
                 </tr>
               ))}

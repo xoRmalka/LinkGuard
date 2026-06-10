@@ -3,7 +3,7 @@ import { Navigate } from 'react-router-dom'
 import { SignInButton, useAuth } from '@clerk/react'
 
 import { useI18n } from '../i18n/I18nProvider'
-import { listMyScans } from '../lib/api'
+import { listMyScans, deleteScan } from '../lib/api'
 import { normalizeVerdict } from '../lib/riskDisplay'
 import { hasClerkPublishableKey } from '../lib/env'
 
@@ -70,17 +70,29 @@ function DashboardInner() {
                 <th>{t('dashboard.col.score')}</th>
                 <th>{t('dashboard.col.verdict')}</th>
                 <th>{t('dashboard.col.date')}</th>
+                <th></th>
               </tr>
             </thead>
             <tbody>
               {rows.map((r) => (
                 <tr key={r.id}>
                   <td className="mono truncate">{r.normalized_url}</td>
-                  <td>{r.score}%</td>
+                  <td>{r.verdict === 'insufficient_data' ? '—' : `${r.score}%`}</td>
                   <td>
                     {t(`result.verdict.${normalizeVerdict(r.verdict)}` as Parameters<typeof t>[0])}
                   </td>
                   <td>{r.created_at ? new Date(r.created_at).toLocaleString() : '—'}</td>
+                  <td>
+                    <button
+                      className="btn btn--ghost btn--sm"
+                      onClick={async () => {
+                        await deleteScan(() => getToken(), r.id)
+                        setRows((prev) => prev.filter((x) => x.id !== r.id))
+                      }}
+                    >
+                      {t('common.delete')}
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>

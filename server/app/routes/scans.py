@@ -130,6 +130,19 @@ def create_scan():
     return jsonify(public), 200
 
 
+@bp.delete("/scans/<scan_id>")
+@require_auth
+def delete_scan(scan_id: str):
+    payload = request.clerk_user  # type: ignore[attr-defined]
+    uid = str(payload.get("sub"))
+    scan = Scan.query.filter_by(id=scan_id, user_id=uid).first()
+    if not scan:
+        return jsonify({"error": "not_found", "message": "Scan not found."}), 404
+    db.session.delete(scan)
+    db.session.commit()
+    return jsonify({"deleted": True}), 200
+
+
 @bp.get("/scans/<scan_id>")
 @require_auth
 def get_scan(scan_id: str):

@@ -127,6 +127,8 @@
   "explanation.safe.caveat": "זה לא מבטיח שהקישור בטוח — תמיד כדאי להיזהר עם קישורים בלתי צפויים.",
   "action.insufficient_data.retry": "נסו שוב מאוחר יותר, או התחברו אם השירות היה מוגבל זמנית.",
   "action.insufficient_data.avoid": "הימנעו מהזנת פרטים או הורדת קבצים מקישור זה עד שתהיה וודאות גבוהה יותר.",
+  "common.delete": "מחק",
+  "common.remove": "הסר",
   "insufficient.reason.safe_browsing_skipped": "בדיקת Google Safe Browsing לא בוצעה — מפתח API חסר.",
   "insufficient.reason.safe_browsing_error": "לא ניתן היה לפנות ל-Google Safe Browsing.",
   "insufficient.reason.shortener": "הקישור מוסתר מאחורי שירות קיצור — לא ניתן לנתח את היעד האמיתי.",

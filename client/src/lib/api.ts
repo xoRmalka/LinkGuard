@@ -67,6 +67,32 @@ export async function listMyScans(
   return (await res.json()) as { items: unknown[]; total: number }
 }
 
+export async function deleteScan(
+  getToken: () => Promise<string | null>,
+  scanId: string
+): Promise<void> {
+  const token = await getToken()
+  if (!token) throw new Error('no token')
+  const res = await fetch(`${base()}/api/v1/scans/${scanId}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  if (!res.ok) throw new Error('failed to delete scan')
+}
+
+export async function removeFavorite(
+  getToken: () => Promise<string | null>,
+  scanId: string
+): Promise<void> {
+  const token = await getToken()
+  if (!token) throw new Error('no token')
+  const res = await fetch(`${base()}/api/v1/scans/${scanId}/favorite`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  if (!res.ok) throw new Error('failed to remove favorite')
+}
+
 export async function listAdminUsers(
   getToken: () => Promise<string | null>
 ): Promise<{
