@@ -64,6 +64,11 @@ def aggregate_score(signals: list[dict], weights_version: str) -> dict[str, Any]
     if sb_threat:
         safety_score = min(safety_score, 20)
 
+    # Typosquatting is a near-certain indicator of phishing intent — cap at high_risk.
+    typo = next((s for s in signals if s.get("id") == "typosquatting"), None)
+    if typo and typo.get("concern"):
+        safety_score = min(safety_score, 45)
+
     # Risk bands based on safety percentage (higher = safer)
     if safety_score >= 85:
         band = "safe"
@@ -81,12 +86,18 @@ def aggregate_score(signals: list[dict], weights_version: str) -> dict[str, Any]
     insufficient = False
     reasons: list[str] = []
     if sb_skipped:
-        reasons.append("Threat intelligence (Google Safe Browsing) was not queried (missing API key).")
+        reasons.append("insufficient.reason.safe_browsing_skipped")
     if sb_error:
-        reasons.append("Google Safe Browsing could not be reached or returned an error.")
+        reasons.append("insufficient.reason.safe_browsing_error")
     if (sb_skipped or sb_error) and safety_score > 80:
         # Do not present a very safe-looking result when threat intelligence was unavailable.
         insufficient = True
+
+    # URL shorteners hide the real destination — we can't meaningfully assess safety.
+    shortener = next((s for s in signals if s.get("id") == "shortener"), None)
+    if shortener and shortener.get("concern") and safety_score > 60:
+        insufficient = True
+        reasons.append("insufficient.reason.shortener")
 
     # Determine verdict based on safety score
     # Safe Browsing concern overrides everything
