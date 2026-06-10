@@ -22,36 +22,45 @@ export function Header() {
   return (
     <header className="site-header">
       <div className="site-header__inner">
-        <Link to="/" className="brand">
-          <img src="/logo.svg" alt="" aria-hidden width={80} height={75} className="brand__logo" />
-          <span className="brand__text">{t('brand')}</span>
-        </Link>
+        <div className="site-header__primary">
+          <Link to="/" className="brand">
+            <img
+              src="/logo.svg"
+              alt=""
+              aria-hidden
+              width={54}
+              height={51}
+              className="brand__logo"
+            />
+            <span className="brand__text">{t('brand')}</span>
+          </Link>
 
-        <nav className="site-nav" aria-label="Main">
-          <NavLink to="/" className="nav-link" end>
-            {t('nav.home')}
-          </NavLink>
-          {hasClerkPublishableKey ? (
-            <Show when="signed-in">
-              <NavLink to="/dashboard" className="nav-link">
-                {t('nav.dashboard')}
-              </NavLink>
-              <NavLink to="/favorites" className="nav-link">
-                {t('nav.favorites')}
-              </NavLink>
-              {showAdmin ? (
-                <>
-                  <NavLink to="/admin" className="nav-link" end>
-                    {t('nav.admin')}
-                  </NavLink>
-                  <NavLink to="/admin/reports" className="nav-link">
-                    {t('admin.reports')}
-                  </NavLink>
-                </>
-              ) : null}
-            </Show>
-          ) : null}
-        </nav>
+          <nav className="site-nav" aria-label="Main">
+            <NavLink to="/" className="nav-link" end>
+              {t('nav.home')}
+            </NavLink>
+            {hasClerkPublishableKey ? (
+              <Show when="signed-in">
+                <NavLink to="/dashboard" className="nav-link">
+                  {t('nav.dashboard')}
+                </NavLink>
+                <NavLink to="/favorites" className="nav-link">
+                  {t('nav.favorites')}
+                </NavLink>
+                {showAdmin ? (
+                  <>
+                    <NavLink to="/admin" className="nav-link" end>
+                      {t('nav.admin')}
+                    </NavLink>
+                    <NavLink to="/admin/reports" className="nav-link">
+                      {t('admin.reports')}
+                    </NavLink>
+                  </>
+                ) : null}
+              </Show>
+            ) : null}
+          </nav>
+        </div>
 
         <div className="site-header__actions">
           <div className="lang-switch" role="group" aria-label="Language">

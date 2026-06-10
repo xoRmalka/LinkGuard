@@ -68,6 +68,7 @@ function HomeContent({
   return (
     <div className="page home">
       <section className="hero panel">
+        <p className="eyebrow hero__eyebrow">{t('home.heroEyebrow')}</p>
         <h1>{t('home.heroTitle')}</h1>
         <p className="lede">{t('home.heroSubtitle')}</p>
 
@@ -75,29 +76,29 @@ function HomeContent({
           <label className="url-form__label" htmlFor="url-input">
             {t('home.urlLabel')}
           </label>
-          <input
-            id="url-input"
-            className="url-form__input"
-            type="url"
-            inputMode="url"
-            autoComplete="off"
-            spellCheck={false}
-            placeholder={t('home.urlPlaceholder')}
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            aria-invalid={Boolean(error)}
-            aria-describedby={error ? 'url-error' : undefined}
-          />
+          <div className="url-form__control">
+            <input
+              id="url-input"
+              className="url-form__input"
+              type="url"
+              inputMode="url"
+              autoComplete="off"
+              spellCheck={false}
+              placeholder={t('home.urlPlaceholder')}
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              aria-invalid={Boolean(error)}
+              aria-describedby={error ? 'url-error' : undefined}
+            />
+            <button className="btn btn--primary url-form__submit" type="submit" disabled={busy || !url.trim()}>
+              {busy ? t('home.analyzing') : t('home.analyze')}
+            </button>
+          </div>
           {error ? (
             <p id="url-error" className="error" role="alert">
               {error}
             </p>
           ) : null}
-          <div className="url-form__actions">
-            <button className="btn btn--primary" type="submit" disabled={busy || !url.trim()}>
-              {busy ? t('home.analyzing') : t('home.analyze')}
-            </button>
-          </div>
         </form>
         <p className="muted small">{t('home.rateHint')}</p>
       </section>
