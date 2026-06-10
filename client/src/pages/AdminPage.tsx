@@ -124,7 +124,7 @@ function AdminInner() {
                       <td>
                         <select
                           value={rowRoles[u.id] ?? 'user'}
-                          disabled={busyId === u.id}
+                          disabled={busyId === u.id || u.id === user?.id}
                           onChange={(e) =>
                             setRowRoles((prev) => ({
                               ...prev,
@@ -141,7 +141,7 @@ function AdminInner() {
                         <button
                           type="button"
                           className="btn btn--ghost"
-                          disabled={busyId === u.id || (rowRoles[u.id] ?? 'user') === u.role}
+                          disabled={busyId === u.id || u.id === user?.id || (rowRoles[u.id] ?? 'user') === u.role}
                           onClick={async () => {
                             setBusyId(u.id)
                             setErr(null)
