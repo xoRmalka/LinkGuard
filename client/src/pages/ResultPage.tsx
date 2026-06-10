@@ -116,7 +116,7 @@ function ResultBody({
           <code dir="ltr">{scan.host || scan.normalized_url}</code>
         </div>
         <VerdictBanner verdict={verdict} />
-        <ScoreCard score={scan.score} band={scan.risk_band} />
+        {verdict !== 'insufficient_data' && <ScoreCard score={scan.score} band={scan.risk_band} />}
       </section>
 
       <section className="panel findings-panel">
@@ -172,7 +172,7 @@ function ResultBody({
           {(scan.insufficient_reasons || []).length > 0 && (
             <ul className="prose-list muted">
               {scan.insufficient_reasons!.map((line) => (
-                <li key={line}>{line}</li>
+                <li key={line}>{t(line as Parameters<typeof t>[0]) || line}</li>
               ))}
             </ul>
           )}
