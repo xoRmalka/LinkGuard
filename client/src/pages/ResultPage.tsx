@@ -7,6 +7,7 @@ import { VerdictBanner } from '../components/VerdictBanner'
 import { useI18n } from '../i18n/I18nProvider'
 import { postFavorite, postReport } from '../lib/api'
 import { hasClerkPublishableKey } from '../lib/env'
+import { verdictTone } from '../lib/riskDisplay'
 import type { ScanPayload, Verdict } from '../lib/types'
 
 function SignalIcon({ status, concern, tooltip }: { status: string; concern?: boolean; tooltip: string }) {
@@ -105,11 +106,18 @@ function ResultBody({
   }
 
   const authed = Boolean(getToken)
+  const tone = verdictTone(verdict)
 
   return (
     <div className="page result">
-      <VerdictBanner verdict={verdict} />
-      <ScoreCard score={scan.score} band={scan.risk_band} />
+      <section className={`result-overview result-overview--${tone}`}>
+        <div className="result-overview__host">
+          <span>{t('result.checkedHost')}</span>
+          <code dir="ltr">{scan.host || scan.normalized_url}</code>
+        </div>
+        <VerdictBanner verdict={verdict} />
+        <ScoreCard score={scan.score} band={scan.risk_band} />
+      </section>
 
       <section className="panel findings-panel">
         <div className="section-heading">
@@ -153,30 +161,32 @@ function ResultBody({
         )}
       </section>
 
-      <section className="panel">
-        <h2>{t('result.why')}</h2>
-        <ul className="prose-list">
-          {(scan.explanation_keys || scan.explanation || []).map((key) => (
-            <li key={key}>{t(key as Parameters<typeof t>[0]) || key}</li>
-          ))}
-        </ul>
-        {(scan.insufficient_reasons || []).length > 0 && (
-          <ul className="prose-list muted">
-            {scan.insufficient_reasons!.map((line) => (
-              <li key={line}>{line}</li>
+      <div className="result-guidance">
+        <section className="panel">
+          <h2>{t('result.why')}</h2>
+          <ul className="prose-list">
+            {(scan.explanation_keys || scan.explanation || []).map((key) => (
+              <li key={key}>{t(key as Parameters<typeof t>[0]) || key}</li>
             ))}
           </ul>
-        )}
-      </section>
+          {(scan.insufficient_reasons || []).length > 0 && (
+            <ul className="prose-list muted">
+              {scan.insufficient_reasons!.map((line) => (
+                <li key={line}>{line}</li>
+              ))}
+            </ul>
+          )}
+        </section>
 
-      <section className="panel">
-        <h2>{t('result.actions')}</h2>
-        <ul className="prose-list">
-          {(scan.action_keys || scan.recommended_actions || []).map((key) => (
-            <li key={key}>{t(key as Parameters<typeof t>[0]) || key}</li>
-          ))}
-        </ul>
-      </section>
+        <section className="panel panel--action">
+          <h2>{t('result.actions')}</h2>
+          <ul className="prose-list">
+            {(scan.action_keys || scan.recommended_actions || []).map((key) => (
+              <li key={key}>{t(key as Parameters<typeof t>[0]) || key}</li>
+            ))}
+          </ul>
+        </section>
+      </div>
 
       <section className="panel">
         <button
