@@ -1,0 +1,7 @@
+# .mailmap - Git contributor attribution mapping
+# This file tells git and GitHub how to map contributor identities
+# Used to exclude Claude from contributor statistics
+
+# Map Claude's co-author email to a non-counted identity
+# This effectively hides Claude from git shortlog and contributor graphs
+Claude Sonnet 4.5 <noreply@anthropic.com> <ignored@localhost>
