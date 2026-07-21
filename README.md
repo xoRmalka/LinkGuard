@@ -19,7 +19,7 @@ LinkGuard helps you assess a URL **before you click**. Paste a link, run automat
 
 ---
 
-## Architecture
+## Architecture 
 
 ```
 Browser (Vite + React, :5173)
