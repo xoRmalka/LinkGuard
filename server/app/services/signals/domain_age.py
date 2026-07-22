@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 # RDAP Bootstrap Service - provides RDAP servers for each TLD
 RDAP_BOOTSTRAP_URL = "https://data.iana.org/rdap/dns.json"
 
-# Fallback RDAP servers for common TLDs
+# RDAP servers for common TLDs
 RDAP_SERVERS = {
     "com": "https://rdap.verisign.com/com/v1/",
     "net": "https://rdap.verisign.com/net/v1/",
@@ -19,7 +19,55 @@ RDAP_SERVERS = {
     "io": "https://rdap.nic.io/",
     "dev": "https://rdap.nic.google/",
     "app": "https://rdap.nic.google/",
+    "co": "https://rdap.nic.co/",
+    "me": "https://rdap.nic.me/",
+    "xyz": "https://rdap.nic.xyz/",
+    "info": "https://rdap.afilias.net/rdap/info/",
+    "biz": "https://rdap.nic.biz/",
+    "us": "https://rdap.nic.us/",
+    "uk": "https://rdap.nominet.uk/uk/",
+    "de": "https://rdap.denic.de/",
+    "fr": "https://rdap.nic.fr/",
+    "nl": "https://rdap.sidn.nl/",
+    "eu": "https://rdap.eurid.eu/",
+    "ca": "https://rdap.ca.fury.ca/rdap/",
+    "au": "https://rdap.auda.org.au/",
+    "in": "https://rdap.registry.in/",
+    "top": "https://rdap.nic.top/",
+    "online": "https://rdap.nic.online/",
+    "site": "https://rdap.nic.site/",
+    "club": "https://rdap.nic.club/",
 }
+
+# Cache for IANA bootstrap data
+_bootstrap_cache: dict | None = None
+
+
+def _fetch_bootstrap() -> dict:
+    """Fetch IANA RDAP bootstrap data (cached)."""
+    global _bootstrap_cache
+    if _bootstrap_cache is not None:
+        return _bootstrap_cache
+
+    try:
+        response = requests.get(RDAP_BOOTSTRAP_URL, timeout=5)
+        if response.status_code == 200:
+            data = response.json()
+            # Build TLD -> RDAP server mapping
+            mapping = {}
+            for service in data.get("services", []):
+                if len(service) >= 2:
+                    tlds = service[0]
+                    urls = service[1]
+                    if urls:
+                        for tld in tlds:
+                            mapping[tld.lower()] = urls[0]
+            _bootstrap_cache = mapping
+            return mapping
+    except Exception as e:
+        logger.debug(f"Failed to fetch RDAP bootstrap: {e}")
+
+    return {}
 
 
 def _get_rdap_server(domain: str) -> str | None:
@@ -29,7 +77,14 @@ def _get_rdap_server(domain: str) -> str | None:
         return None
 
     tld = parts[-1]
-    return RDAP_SERVERS.get(tld)
+
+    # Try hardcoded servers first (faster)
+    if tld in RDAP_SERVERS:
+        return RDAP_SERVERS[tld]
+
+    # Fall back to IANA bootstrap
+    bootstrap = _fetch_bootstrap()
+    return bootstrap.get(tld)
 
 
 def _parse_rdap_date(date_str: str | None) -> datetime | None:
@@ -173,10 +228,11 @@ def domain_age_signal(host: str) -> dict:
         return {
             "id": "domain_age",
             "status": "ok",
-            "concern": False,
+            "concern": True,
+            "severity": "moderate",  # New field to indicate partial penalty
             "age_days": age_days,
             "registered_date": reg_date.date().isoformat(),
-            "summary": f"Domain registered {age_days} days ago (moderately new, but past the highest-risk period).",
+            "summary": f"Domain registered {age_days} days ago — newer domains carry elevated risk.",
         }
 
     # Established domain
