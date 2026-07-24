@@ -25,14 +25,15 @@ def test_safe_browsing_threat_forces_dangerous_high_risk_score():
 
 
 def test_clean_safe_browsing_result_keeps_regular_score():
+    """All clean signals should return max score (capped at 95 - no automated analysis is 100% safe)."""
     result = aggregate_score(
         _signals({"id": "safe_browsing", "status": "ok", "concern": False}),
         "test",
     )
 
-    assert result["score"] == 100
+    assert result["score"] == 95  # Max score capped at 95%
     assert result["risk_band"] == "safe"
-    assert result["verdict"] == "safe"
+    assert result["verdict"] == "likely_safe"
 
 
 def test_skipped_safe_browsing_prevents_safe_verdict():

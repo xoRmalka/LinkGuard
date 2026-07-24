@@ -9,12 +9,16 @@ from app.services.normalize import normalize_url
 from app.services.scoring import aggregate_score
 from app.services.signals.domain_age import domain_age_signal
 from app.services.signals.entropy import entropy_signal
+from app.services.signals.http_scheme import http_scheme_signal
 from app.services.signals.ip_host import ip_host_signal
 from app.services.signals.parse import parse_signal
+from app.services.signals.punycode import punycode_signal
 from app.services.signals.shortener import shortener_signal
-# SSL check removed - security risk (direct connection to malicious hosts) and high false positive rate
-# from app.services.signals.ssl_check import ssl_signal
+from app.services.signals.suspicious_port import suspicious_port_signal
+from app.services.signals.suspicious_subdomain import suspicious_subdomain_signal
+from app.services.signals.suspicious_tld import suspicious_tld_signal
 from app.services.signals.typosquatting import typosquatting_signal
+from app.services.signals.url_length import url_length_signal
 
 
 def run_pipeline(raw_url: str) -> dict:
@@ -29,15 +33,31 @@ def run_pipeline(raw_url: str) -> dict:
     parts = urlsplit(norm.normalized_url or "")
     path_query = (parts.path or "/") + (("?" + parts.query) if parts.query else "")
 
+    # Extract port from normalized URL
+    try:
+        port = parts.port
+    except ValueError:
+        port = None
+
     signals: list[dict] = []
+
+    # URL structure signals
     signals.append(parse_signal(True))
-    signals.append(ip_host_signal(norm.is_ip_host))
+    signals.append(http_scheme_signal(norm.scheme or ""))
+    signals.append(url_length_signal(norm.normalized_url or ""))
+    signals.append(suspicious_port_signal(port))
+
+    # Domain signals - pass host for obfuscated IP detection
+    signals.append(ip_host_signal(norm.is_ip_host, norm.host))
+    signals.append(punycode_signal(norm.punycode_applied, norm.host_display, norm.host))
     signals.append(shortener_signal(norm.host or ""))
     signals.append(typosquatting_signal(norm.host_display or norm.host or ""))
-    signals.append(entropy_signal(path_query))
+    signals.append(suspicious_tld_signal(norm.host or ""))
+    signals.append(suspicious_subdomain_signal(norm.host or ""))
     signals.append(domain_age_signal(norm.host or ""))
-    # SSL check removed - causes security issues (direct connection) and false positives
-    # signals.append(ssl_signal(norm.normalized_url or ""))
+
+    # Content signals
+    signals.append(entropy_signal(path_query))
 
     api_key = current_app.config.get("GOOGLE_SAFE_BROWSING_API_KEY", "")
     signals.append(check_safe_browsing(norm.normalized_url or "", api_key))

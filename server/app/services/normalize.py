@@ -7,6 +7,14 @@ from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 _SCHEMES = frozenset({"http", "https"})
 
+# Dangerous schemes that should be explicitly rejected
+_DANGEROUS_SCHEMES = frozenset({
+    "javascript",  # XSS attacks
+    "data",        # Can embed malicious content
+    "vbscript",    # IE scripting attacks
+    "file",        # Local file access
+})
+
 
 @dataclass
 class NormalizeResult:
@@ -47,6 +55,21 @@ def normalize_url(raw: str) -> NormalizeResult:
         )
 
     scheme = (parts.scheme or "").lower()
+
+    # Explicitly reject dangerous schemes with a specific error
+    if scheme in _DANGEROUS_SCHEMES:
+        return NormalizeResult(
+            False,
+            "dangerous_scheme",
+            raw,
+            None,
+            None,
+            None,
+            None,
+            False,
+            False,
+        )
+
     if scheme not in _SCHEMES:
         return NormalizeResult(
             False,

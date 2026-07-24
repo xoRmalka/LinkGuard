@@ -1,12 +1,30 @@
 {
-  "version": "2026-05-17-v4-safety",
+  "version": "2026-07-24-v5-critical-fixes",
+  "max_score": 95,
+  "likely_safe_threshold": 90,
   "signals": {
-    "parse": { "weight": 0.02, "max_points": 2 },
-    "domain_age": { "weight": 0.30, "max_points": 30 },
-    "typosquatting": { "weight": 0.18, "max_points": 18 },
-    "ip_host": { "weight": 0.05, "max_points": 5 },
-    "entropy": { "weight": 0.03, "max_points": 3 },
-    "shortener": { "weight": 0.02, "max_points": 2 },
-    "safe_browsing": { "weight": 0.40, "max_points": 40 }
-  }
+    "parse": { "weight": 0.05, "max_points": 5 },
+    "domain_age": { "weight": 0.25, "max_points": 25 },
+    "typosquatting": { "weight": 0.20, "max_points": 20 },
+    "ip_host": { "weight": 0.12, "max_points": 12 },
+    "entropy": { "weight": 0.05, "max_points": 5 },
+    "shortener": { "weight": 0.12, "max_points": 12 },
+    "safe_browsing": { "weight": 0.40, "max_points": 40 },
+    "suspicious_tld": { "weight": 0.15, "max_points": 15 },
+    "suspicious_subdomain": { "weight": 0.08, "max_points": 8 },
+    "http_scheme": { "weight": 0.05, "max_points": 5 },
+    "suspicious_port": { "weight": 0.06, "max_points": 6 },
+    "url_length": { "weight": 0.04, "max_points": 4 },
+    "punycode": { "weight": 0.08, "max_points": 8 }
+  },
+  "uncertainty_penalties": {
+    "unknown_multiplier": 0.50,
+    "error_multiplier": 0.40,
+    "skipped_multiplier": 0.40
+  },
+  "moderate_severity_multiplier": 0.5,
+  "high_severity_multiplier": 1.0,
+  "multiple_concerns_threshold": 3,
+  "multiple_concerns_penalty": 10,
+  "domain_age_unknown_cap": 85
 }
