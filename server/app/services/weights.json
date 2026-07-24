@@ -1,5 +1,5 @@
 {
-  "version": "2026-07-21-v6-conservative",
+  "version": "2026-07-24-v7-merged",
   "max_score": 95,
   "likely_safe_threshold": 90,
   "signals": {
@@ -24,8 +24,8 @@
       "max_points": 30
     },
     "ip_host": {
-      "weight": 0.1,
-      "max_points": 10
+      "weight": 0.12,
+      "max_points": 12
     },
     "entropy": {
       "weight": 0.05,
@@ -70,6 +70,7 @@
     "skipped_multiplier": 0.4
   },
   "moderate_severity_multiplier": 0.5,
+  "high_severity_multiplier": 1.0,
   "multiple_concerns_threshold": 3,
   "multiple_concerns_penalty": 10,
   "domain_age_unknown_cap": 85

@@ -50,8 +50,8 @@ def run_pipeline(raw_url: str) -> dict:
     signals.append(suspicious_port_signal(port))
     signals.append(userinfo_signal(norm.has_userinfo))
 
-    # Domain signals
-    signals.append(ip_host_signal(norm.is_ip_host))
+    # Domain signals - pass host for obfuscated IP detection
+    signals.append(ip_host_signal(norm.is_ip_host, norm.host))
     signals.append(internal_host_signal(norm.host))
     signals.append(punycode_signal(norm.punycode_applied, norm.host_display, norm.host))
     signals.append(shortener_signal(norm.host or ""))
