@@ -288,6 +288,17 @@ def test_ip_host_applies_penalty():
     assert result["score"] < 95
 
 
+def test_ip_host_high_severity_caps_score():
+    """IP host with high severity (obfuscated/private) should cap score at 40."""
+    signals = _signals_with({
+        "ip_host": {"status": "ok", "concern": True, "severity": "high"}
+    })
+    result = aggregate_score(signals, "test")
+
+    assert result["score"] <= 40
+    assert result["risk_band"] == "high_risk"
+
+
 def test_suspicious_port_applies_penalty():
     """Suspicious port concern should apply penalty."""
     signals = _signals_with({

@@ -39,6 +39,10 @@ def _partial_for_signal(sig: dict, cfg: dict, weights: dict) -> float:
         if severity == "moderate":
             moderate_mult = weights.get("moderate_severity_multiplier", 0.5)
             return max_pts * moderate_mult
+        # High severity gets full penalty (e.g., obfuscated IP, private IP)
+        if severity == "high":
+            high_mult = weights.get("high_severity_multiplier", 1.0)
+            return max_pts * high_mult
         return max_pts
 
     # Uncertainty penalties - missing/failed data should reduce confidence
@@ -155,14 +159,17 @@ def aggregate_score(signals: list[dict], weights_version: str) -> dict[str, Any]
     if typo and typo.get("concern"):
         safety_score = min(safety_score, 45)
 
+    # Userinfo in URL is deceptive
     userinfo = next((s for s in signals if s.get("id") == "userinfo"), None)
     if userinfo and userinfo.get("concern"):
         safety_score = min(safety_score, 45)
 
+    # Internal/private hosts should not appear in shared links
     internal_host = next((s for s in signals if s.get("id") == "internal_host"), None)
     if internal_host and internal_host.get("concern"):
         safety_score = min(safety_score, 45)
 
+    # Suspicious TLD + subdomain combo is highly suspicious
     suspicious_tld = next((s for s in signals if s.get("id") == "suspicious_tld"), None)
     suspicious_subdomain = next((s for s in signals if s.get("id") == "suspicious_subdomain"), None)
     if (
@@ -170,6 +177,11 @@ def aggregate_score(signals: list[dict], weights_version: str) -> dict[str, Any]
         and suspicious_subdomain and suspicious_subdomain.get("concern")
     ):
         safety_score = min(safety_score, 49)
+
+    # Obfuscated or private IPs are highly suspicious
+    ip_host = next((s for s in signals if s.get("id") == "ip_host"), None)
+    if ip_host and ip_host.get("concern") and ip_host.get("severity") == "high":
+        safety_score = min(safety_score, 40)
 
     # "Likely safe" should mean no checks found a concrete concern.
     if concern_signals and safety_score >= likely_safe_threshold:

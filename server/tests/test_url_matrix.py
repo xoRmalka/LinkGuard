@@ -80,7 +80,7 @@ def test_scan_accepts_and_normalizes_common_url_forms(
     [
         ("", "empty"),
         ("ftp://example.com", "unsupported_scheme"),
-        ("javascript:alert(1)", "unsupported_scheme"),
+        ("javascript:alert(1)", "dangerous_scheme"),
         ("https://", "missing_host"),
         ("https://example.com:abc/path", "invalid_port"),
         ("https://example.com:70000/path", "invalid_port"),
