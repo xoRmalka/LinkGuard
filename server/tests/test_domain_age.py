@@ -184,6 +184,19 @@ class TestDomainAgeSignal(unittest.TestCase):
         self.assertEqual(result["status"], "ok")
 
     @patch("app.services.signals.domain_age._query_rdap")
+    def test_domain_age_signal_uses_registrable_domain_for_subdomain(self, mock_query):
+        """Test service subdomains query RDAP for the registered domain."""
+        reg_date = datetime.now(timezone.utc) - timedelta(days=500)
+        mock_query.return_value = {
+            "events": [{"eventAction": "registration", "eventDate": reg_date.isoformat()}]
+        }
+
+        result = domain_age_signal("login.microsoft.com")
+
+        mock_query.assert_called_once_with("microsoft.com")
+        self.assertEqual(result["status"], "ok")
+
+    @patch("app.services.signals.domain_age._query_rdap")
     def test_domain_age_signal_future_date_error(self, mock_query):
         """Test future registration date returns error."""
         # Mock RDAP response with future date

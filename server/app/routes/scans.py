@@ -106,7 +106,8 @@ def create_scan():
         )
 
     if payload:
-        uid = str(payload.get("sub"))
+        user = _ensure_user(payload)
+        uid = user.id
         scan = Scan(
             user_id=uid,
             input_url=result["input_url"],
@@ -192,7 +193,8 @@ def toggle_favorite(scan_id: str):
 @require_auth
 def create_report():
     payload = request.clerk_user  # type: ignore[attr-defined]
-    uid = str(payload.get("sub"))
+    user = _ensure_user(payload)
+    uid = user.id
     body = request.get_json(silent=True) or {}
     url = (body.get("url") or "").strip()
     note = body.get("note")
@@ -237,6 +239,28 @@ def admin_list_reports():
         )
 
     return jsonify({"items": items})
+
+
+@bp.patch("/admin/reports/<report_id>")
+@require_auth
+def admin_update_report_status(report_id: str):
+    """Update report triage status (admin only)."""
+    is_admin = getattr(request, "clerk_effective_role", None) == "admin"
+    if not is_admin:
+        return jsonify({"error": "forbidden", "message": "Admin role required."}), 403
+
+    body = request.get_json(silent=True) or {}
+    status = str(body.get("status") or "").strip().lower()
+    if status not in ("open", "approved", "rejected"):
+        return jsonify({"error": "validation", "message": "status must be open, approved, or rejected"}), 400
+
+    r = Report.query.filter_by(id=report_id).first()
+    if not r:
+        return jsonify({"error": "not_found", "message": "Report not found."}), 404
+
+    r.status = status
+    db.session.commit()
+    return jsonify({"id": r.id, "status": r.status}), 200
 
 
 @bp.delete("/admin/reports/<report_id>")

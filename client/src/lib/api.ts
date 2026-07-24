@@ -212,6 +212,30 @@ export async function getAdminReports(token: string) {
   return res.json()
 }
 
+export async function patchAdminReportStatus(
+  token: string,
+  reportId: string,
+  status: 'open' | 'approved' | 'rejected'
+): Promise<{ id: string; status: string }> {
+  if (!token) throw new Error('no token')
+  const res = await fetch(
+    `${base()}/api/v1/admin/reports/${encodeURIComponent(reportId)}`,
+    {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ status }),
+    }
+  )
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error((err as { message?: string }).message || 'status update failed')
+  }
+  return res.json() as Promise<{ id: string; status: string }>
+}
+
 export async function deleteAdminReport(token: string, reportId: string): Promise<void> {
   if (!token) throw new Error('no token')
   const res = await fetch(

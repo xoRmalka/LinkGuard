@@ -1,5 +1,6 @@
 export type Verdict =
   | 'safe'
+  | 'likely_safe'
   | 'low_risk'
   | 'moderate_risk'
   | 'high_risk'

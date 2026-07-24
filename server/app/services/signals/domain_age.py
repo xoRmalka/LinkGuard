@@ -6,6 +6,8 @@ from typing import Any
 
 import requests
 
+from app.services.signals.domain_utils import parse_domain
+
 logger = logging.getLogger(__name__)
 
 # RDAP Bootstrap Service - provides RDAP servers for each TLD
@@ -170,14 +172,10 @@ def domain_age_signal(host: str) -> dict:
             "summary": "No hostname provided.",
         }
 
-    # Strip port if present
-    domain = host.split(":")[0].lower()
+    parts = parse_domain(host)
+    domain = parts.registrable_domain
 
-    # Remove "www." prefix for RDAP lookup
-    if domain.startswith("www."):
-        domain = domain[4:]
-
-    # Query RDAP
+    # Query RDAP for the registered domain, not service subdomains like login.microsoft.com.
     rdap_data = _query_rdap(domain)
 
     if not rdap_data:

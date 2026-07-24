@@ -50,3 +50,30 @@ def test_normalize_drops_only_scheme_default_port():
 
     assert https_default.normalized_url == "https://example.com/path"
     assert https_non_default.normalized_url == "https://example.com:80/path"
+
+
+def test_normalize_accepts_unicode_idn_as_punycode():
+    r = normalize_url("https://\u0430pple.com/login")
+
+    assert r.ok
+    assert r.punycode_applied
+    assert r.host.startswith("xn--")
+    assert r.normalized_url == "https://xn--pple-43d.com/login"
+
+
+def test_normalize_flags_ascii_punycode_host():
+    r = normalize_url("https://xn--pple-43d.com/login")
+
+    assert r.ok
+    assert r.punycode_applied
+    assert r.host == "xn--pple-43d.com"
+    assert r.host_display == "аpple.com"
+
+
+def test_normalize_detects_deceptive_userinfo():
+    r = normalize_url("paypal.com@evil.com")
+
+    assert r.ok
+    assert r.has_userinfo
+    assert r.host == "evil.com"
+    assert r.normalized_url == "https://evil.com/"

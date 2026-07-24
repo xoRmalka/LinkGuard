@@ -10,7 +10,9 @@ def _base_signals() -> list[dict]:
         {"id": "http_scheme", "status": "ok", "concern": False},
         {"id": "url_length", "status": "ok", "concern": False},
         {"id": "suspicious_port", "status": "ok", "concern": False},
+        {"id": "userinfo", "status": "ok", "concern": False},
         {"id": "ip_host", "status": "ok", "concern": False},
+        {"id": "internal_host", "status": "ok", "concern": False},
         {"id": "punycode", "status": "ok", "concern": False},
         {"id": "shortener", "status": "ok", "concern": False},
         {"id": "typosquatting", "status": "ok", "concern": False},
@@ -56,8 +58,8 @@ def test_confidence_tracking_all_complete():
     """All signals completing should give high confidence."""
     result = aggregate_score(_base_signals(), "test")
 
-    assert result["checks_completed"] == 13
-    assert result["checks_total"] == 13
+    assert result["checks_completed"] == 15
+    assert result["checks_total"] == 15
     assert result["confidence_level"] == "high"
 
 
@@ -170,7 +172,7 @@ def test_confidence_medium_with_two_incomplete():
     result = aggregate_score(signals, "test")
 
     assert result["confidence_level"] == "medium"
-    assert result["checks_completed"] == 11
+    assert result["checks_completed"] == 13
 
 
 # =============================================================================
@@ -259,10 +261,21 @@ def test_http_scheme_applies_penalty():
     })
     result = aggregate_score(signals, "test")
 
-    # http_scheme max_points = 5, so 100 - 5 = 95 (equals cap)
     # Verify penalty was applied by checking breakdown
     http_signal = next(b for b in result["breakdown"] if b["id"] == "http_scheme")
     assert http_signal["points"] > 0
+
+
+def test_likely_safe_requires_no_concerns():
+    """A URL with any concrete concern should not receive the top verdict."""
+    signals = _signals_with({
+        "http_scheme": {"status": "ok", "concern": True}
+    })
+    result = aggregate_score(signals, "test")
+
+    assert result["score"] < 90
+    assert result["risk_band"] == "low_risk"
+    assert result["verdict"] == "low_risk"
 
 
 def test_ip_host_applies_penalty():
@@ -305,6 +318,40 @@ def test_punycode_applies_penalty():
     result = aggregate_score(signals, "test")
 
     assert result["score"] < 95
+
+
+def test_userinfo_caps_score():
+    """Deceptive userinfo should force a high-risk score cap."""
+    signals = _signals_with({
+        "userinfo": {"status": "ok", "concern": True}
+    })
+    result = aggregate_score(signals, "test")
+
+    assert result["score"] <= 45
+    assert result["risk_band"] == "high_risk"
+
+
+def test_internal_host_caps_score():
+    """Local/private hosts should force a high-risk score cap."""
+    signals = _signals_with({
+        "internal_host": {"status": "ok", "concern": True}
+    })
+    result = aggregate_score(signals, "test")
+
+    assert result["score"] <= 45
+    assert result["risk_band"] == "high_risk"
+
+
+def test_suspicious_tld_and_subdomain_combo_is_high_risk():
+    """Phishing-style subdomain on an abusive TLD should not stay moderate."""
+    signals = _signals_with({
+        "suspicious_tld": {"status": "ok", "concern": True},
+        "suspicious_subdomain": {"status": "ok", "concern": True},
+    })
+    result = aggregate_score(signals, "test")
+
+    assert result["score"] <= 49
+    assert result["risk_band"] == "high_risk"
 
 
 # =============================================================================

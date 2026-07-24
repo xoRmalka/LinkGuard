@@ -4,7 +4,7 @@ import { AdminGate } from '../components/admin/AdminGate'
 import { withClerkAdminPage } from '../components/admin/withClerkAdminPage'
 import { useAdminAccess } from '../hooks/useAdminAccess'
 import { useI18n } from '../i18n/I18nProvider'
-import { deleteAdminReport, getAdminReports } from '../lib/api'
+import { getAdminReports, patchAdminReportStatus } from '../lib/api'
 
 type ReportRow = {
   id: string
@@ -61,6 +61,7 @@ function AdminReportsInner() {
                   <tr>
                     <th>{t('dashboard.col.url')}</th>
                     <th>{t('dashboard.col.score')}</th>
+                    <th>{t('result.col.status')}</th>
                     <th>{t('admin.actions')}</th>
                   </tr>
                 </thead>
@@ -69,14 +70,12 @@ function AdminReportsInner() {
                     <tr key={r.id}>
                       <td>{r.normalized_url ?? r.url}</td>
                       <td>{typeof r.score === 'number' ? r.score : '—'}</td>
+                      <td>{r.status ?? 'open'}</td>
                       <td>
-                        <button type="button" className="btn btn--ghost" onClick={() => {}}>
-                          {t('admin.approve')}
-                        </button>
                         <button
                           type="button"
                           className="btn btn--ghost"
-                          disabled={busyId === r.id}
+                          disabled={busyId === r.id || r.status === 'approved'}
                           onClick={async () => {
                             if (busyId) return
                             setBusyId(r.id)
@@ -84,8 +83,34 @@ function AdminReportsInner() {
                             try {
                               const token = await getToken()
                               if (!token) throw new Error('no token')
-                              await deleteAdminReport(token, r.id)
-                              setItems((prev) => prev.filter((x) => x.id !== r.id))
+                              const updated = await patchAdminReportStatus(token, r.id, 'approved')
+                              setItems((prev) =>
+                                prev.map((x) => (x.id === r.id ? { ...x, status: updated.status } : x))
+                              )
+                            } catch (e) {
+                              setErr((e as Error).message)
+                            } finally {
+                              setBusyId(null)
+                            }
+                          }}
+                        >
+                          {t('admin.approve')}
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn--ghost"
+                          disabled={busyId === r.id || r.status === 'rejected'}
+                          onClick={async () => {
+                            if (busyId) return
+                            setBusyId(r.id)
+                            setErr(null)
+                            try {
+                              const token = await getToken()
+                              if (!token) throw new Error('no token')
+                              const updated = await patchAdminReportStatus(token, r.id, 'rejected')
+                              setItems((prev) =>
+                                prev.map((x) => (x.id === r.id ? { ...x, status: updated.status } : x))
+                              )
                             } catch (e) {
                               setErr((e as Error).message)
                             } finally {
