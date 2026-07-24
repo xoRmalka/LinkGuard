@@ -80,7 +80,7 @@ function HomeContent({
             <input
               id="url-input"
               className="url-form__input"
-              type="url"
+              type="text"
               inputMode="url"
               autoComplete="off"
               spellCheck={false}

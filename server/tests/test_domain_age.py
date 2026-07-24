@@ -88,7 +88,7 @@ class TestDomainAgeSignal(unittest.TestCase):
 
     @patch("app.services.signals.domain_age._query_rdap")
     def test_domain_age_signal_moderately_new_domain(self, mock_query):
-        """Test domain 30-180 days old has moderate concern (no flag)."""
+        """Test domain 30-180 days old has moderate concern with severity flag."""
         # Mock RDAP response for domain registered 90 days ago
         reg_date = datetime.now(timezone.utc) - timedelta(days=90)
         mock_query.return_value = {
@@ -99,10 +99,10 @@ class TestDomainAgeSignal(unittest.TestCase):
 
         self.assertEqual(result["id"], "domain_age")
         self.assertEqual(result["status"], "ok")
-        self.assertFalse(result["concern"])
+        self.assertTrue(result["concern"])  # Now flagged as concern
+        self.assertEqual(result["severity"], "moderate")  # With moderate severity
         self.assertEqual(result["age_days"], 90)
         self.assertIn("90 days ago", result["summary"])
-        self.assertIn("moderately new", result["summary"])
 
     @patch("app.services.signals.domain_age._query_rdap")
     def test_domain_age_signal_established_domain(self, mock_query):
@@ -181,6 +181,19 @@ class TestDomainAgeSignal(unittest.TestCase):
 
         # Verify mock was called with domain without port
         mock_query.assert_called_once_with("example.com")
+        self.assertEqual(result["status"], "ok")
+
+    @patch("app.services.signals.domain_age._query_rdap")
+    def test_domain_age_signal_uses_registrable_domain_for_subdomain(self, mock_query):
+        """Test service subdomains query RDAP for the registered domain."""
+        reg_date = datetime.now(timezone.utc) - timedelta(days=500)
+        mock_query.return_value = {
+            "events": [{"eventAction": "registration", "eventDate": reg_date.isoformat()}]
+        }
+
+        result = domain_age_signal("login.microsoft.com")
+
+        mock_query.assert_called_once_with("microsoft.com")
         self.assertEqual(result["status"], "ok")
 
     @patch("app.services.signals.domain_age._query_rdap")
