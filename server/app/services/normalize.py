@@ -19,6 +19,7 @@ class NormalizeResult:
     scheme: str | None
     is_ip_host: bool
     punycode_applied: bool
+    has_userinfo: bool
 
 
 def _host_is_ip(host: str) -> bool:
@@ -33,7 +34,7 @@ def normalize_url(raw: str) -> NormalizeResult:
     text = (raw or "").strip()
     if not text:
         return NormalizeResult(
-            False, "empty", text, None, None, None, None, False, False
+            False, "empty", text, None, None, None, None, False, False, False
         )
 
     if not re.match(r"^[a-zA-Z][a-zA-Z0-9+.-]*:", text):
@@ -43,7 +44,7 @@ def normalize_url(raw: str) -> NormalizeResult:
         parts = urlsplit(text)
     except ValueError:
         return NormalizeResult(
-            False, "invalid_url", raw, None, None, None, None, False, False
+            False, "invalid_url", raw, None, None, None, None, False, False, False
         )
 
     scheme = (parts.scheme or "").lower()
@@ -58,6 +59,7 @@ def normalize_url(raw: str) -> NormalizeResult:
             None,
             False,
             False,
+            False,
         )
 
     try:
@@ -65,26 +67,29 @@ def normalize_url(raw: str) -> NormalizeResult:
         port = parts.port
     except ValueError:
         return NormalizeResult(
-            False, "invalid_port", raw, None, None, None, None, False, False
+            False, "invalid_port", raw, None, None, None, None, False, False, False
         )
 
     if not host:
         return NormalizeResult(
-            False, "missing_host", raw, None, None, None, None, False, False
+            False, "missing_host", raw, None, None, None, None, False, False, False
         )
 
-    punycode_applied = False
+    has_userinfo = parts.username is not None or parts.password is not None
     host_display = host
     try:
-        if host.encode("ascii", "strict") != host.encode("utf-8"):
-            punycode_applied = True
-        ascii_host = host.encode("idna").decode("ascii")
-        host_display = host
-        host = ascii_host
+        ascii_host = host.encode("idna").decode("ascii").lower()
+        decoded_host = ascii_host.encode("ascii").decode("idna")
     except (UnicodeError, UnicodeDecodeError):
         return NormalizeResult(
-            False, "invalid_host", raw, None, None, None, None, False, False
+            False, "invalid_host", raw, None, None, None, None, False, False, False
         )
+    punycode_applied = ascii_host != host.lower() or any(
+        label.startswith("xn--") for label in ascii_host.split(".")
+    )
+    if punycode_applied:
+        host_display = decoded_host
+    host = ascii_host
 
     is_ip = _host_is_ip(host)
 
@@ -111,4 +116,5 @@ def normalize_url(raw: str) -> NormalizeResult:
         scheme,
         is_ip,
         punycode_applied,
+        has_userinfo,
     )

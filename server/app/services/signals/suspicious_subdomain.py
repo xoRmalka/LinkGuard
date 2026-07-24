@@ -2,6 +2,8 @@
 
 import re
 
+from app.services.signals.domain_utils import parse_domain
+
 # Keywords commonly used in phishing subdomains
 _SUSPICIOUS_KEYWORDS = frozenset({
     "login", "signin", "sign-in", "signon", "sign-on",
@@ -23,40 +25,37 @@ def suspicious_subdomain_signal(host: str) -> dict:
             "summary": "No hostname provided.",
         }
 
-    # Remove port and lowercase
-    host_clean = host.lower().split(":")[0]
-    parts = host_clean.split(".")
-
-    if len(parts) < 2:
+    parts = parse_domain(host)
+    if parts.is_ip or not parts.subdomains:
         return {
             "id": "suspicious_subdomain",
             "status": "ok",
             "concern": False,
+            "subdomain_depth": 0,
             "summary": "No subdomains to analyze.",
         }
 
-    # Subdomains are everything except the last two parts (domain.tld)
-    # For co.uk style TLDs this isn't perfect, but good enough for this use case
-    subdomains = parts[:-2] if len(parts) > 2 else []
-
+    subdomains = parts.subdomains
     concerns = []
 
     # Check 1: Excessive subdomain depth (>3 levels is suspicious)
     if len(subdomains) > 3:
         concerns.append(f"Unusually deep subdomain structure ({len(subdomains)} levels)")
 
-    # Check 2: Suspicious keywords in subdomains
+    # Check 2: clustered security-sensitive keywords in subdomains. A single
+    # ordinary label such as login.microsoft.com is common and should not be
+    # enough on its own to mark a legitimate domain as suspicious.
     subdomain_text = ".".join(subdomains)
-    found_keywords = []
-    for keyword in _SUSPICIOUS_KEYWORDS:
-        if keyword in subdomain_text:
-            found_keywords.append(keyword)
+    tokens = {token for token in re.split(r"[^a-z0-9]+", subdomain_text) if token}
+    found_keywords = sorted(keyword for keyword in _SUSPICIOUS_KEYWORDS if keyword in tokens)
 
-    if found_keywords:
-        concerns.append(f"Contains security-sensitive keywords: {', '.join(found_keywords[:3])}")
+    hyphen_count = subdomain_text.count("-")
+    keyword_cluster = len(found_keywords) >= 2
+    keyword_with_obfuscation = bool(found_keywords) and (len(subdomains) >= 2 or hyphen_count >= 2)
+    if keyword_cluster or keyword_with_obfuscation:
+        concerns.append(f"Contains clustered security-sensitive keywords: {', '.join(found_keywords[:3])}")
 
     # Check 3: Multiple hyphens (e.g., "secure-login-verify")
-    hyphen_count = subdomain_text.count("-")
     if hyphen_count >= 3:
         concerns.append("Multiple hyphens in subdomain (common phishing pattern)")
 

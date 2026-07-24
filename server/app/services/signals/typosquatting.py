@@ -1,5 +1,7 @@
 import re
 
+from app.services.signals.domain_utils import parse_domain
+
 # Suspicious keywords that shouldn't appear in legitimate domain names
 _SUSPICIOUS_KEYWORDS = frozenset({
     # Phishing indicators
@@ -71,11 +73,9 @@ def _mixed_script(host: str) -> bool:
 
 
 def typosquatting_signal(host: str) -> dict:
-    base = re.sub(r"^www\.", "", (host or "").lower())
-    base = base.split(":")[0]
-
-    # Extract just the domain name without TLD for comparison
-    domain_label = base.split(".")[0]
+    parts = parse_domain(host)
+    base = re.sub(r"^www\.", "", parts.registrable_domain or parts.host)
+    domain_label = parts.domain_label
 
     best = None
     best_d = 99
@@ -91,10 +91,11 @@ def typosquatting_signal(host: str) -> dict:
 
     concern = False
     summary = "No strong typosquatting heuristic matched."
-    if best_d == 1 and best:
+    fuzzy_match_allowed = bool(best and len(domain_label) >= 4 and len(best) >= 4)
+    if best_d == 1 and fuzzy_match_allowed:
         concern = True
         summary = f'Host is very close to "{best}" - possible typosquatting.'
-    elif best_d == 2 and best and len(domain_label) <= len(best) + 3:
+    elif best_d == 2 and fuzzy_match_allowed and len(domain_label) <= len(best) + 3:
         concern = True
         summary = f'Host somewhat resembles "{best}" - review carefully.'
 

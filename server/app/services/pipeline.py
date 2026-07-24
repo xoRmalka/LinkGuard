@@ -10,6 +10,7 @@ from app.services.scoring import aggregate_score
 from app.services.signals.domain_age import domain_age_signal
 from app.services.signals.entropy import entropy_signal
 from app.services.signals.http_scheme import http_scheme_signal
+from app.services.signals.internal_host import internal_host_signal
 from app.services.signals.ip_host import ip_host_signal
 from app.services.signals.parse import parse_signal
 from app.services.signals.punycode import punycode_signal
@@ -19,6 +20,7 @@ from app.services.signals.suspicious_subdomain import suspicious_subdomain_signa
 from app.services.signals.suspicious_tld import suspicious_tld_signal
 from app.services.signals.typosquatting import typosquatting_signal
 from app.services.signals.url_length import url_length_signal
+from app.services.signals.userinfo import userinfo_signal
 
 
 def run_pipeline(raw_url: str) -> dict:
@@ -46,9 +48,11 @@ def run_pipeline(raw_url: str) -> dict:
     signals.append(http_scheme_signal(norm.scheme or ""))
     signals.append(url_length_signal(norm.normalized_url or ""))
     signals.append(suspicious_port_signal(port))
+    signals.append(userinfo_signal(norm.has_userinfo))
 
     # Domain signals
     signals.append(ip_host_signal(norm.is_ip_host))
+    signals.append(internal_host_signal(norm.host))
     signals.append(punycode_signal(norm.punycode_applied, norm.host_display, norm.host))
     signals.append(shortener_signal(norm.host or ""))
     signals.append(typosquatting_signal(norm.host_display or norm.host or ""))
@@ -77,6 +81,7 @@ def run_pipeline(raw_url: str) -> dict:
         "scheme": norm.scheme,
         "is_ip_host": norm.is_ip_host,
         "punycode_applied": norm.punycode_applied,
+        "has_userinfo": norm.has_userinfo,
         **agg,
         "explanation": explanation,
         "recommended_actions": actions,
