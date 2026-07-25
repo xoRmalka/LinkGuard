@@ -15,7 +15,8 @@ The LinkGuard front end is a **Vite + React** single-page app that lets users pa
 | **History** | Dashboard of saved scans (signed-in) |
 | **Favorites** | Save scans from the result page; list at `/favorites` |
 | **Report** | Flag a URL for later moderation (`POST /api/v1/reports`) |
-| **Admin** | User list, invites, roles (Clerk `public_metadata.role`) |
+| **Admin** | User list, invites, roles (Clerk `public_metadata.role`); gated by `AdminGate`/`useAdminAccess` |
+| **Admin reports** | Review/resolve flagged URLs at `/admin/reports` |
 | **i18n** | `en.json` / `he.json`; Clerk UI localized (`heIL` / `enUS`) |
 
 ---
@@ -130,6 +131,7 @@ Full comments and examples: [`server/.env.example`](../server/.env.example).
 | `/dashboard` | Scan history | Signed in |
 | `/favorites` | Saved scans | Signed in |
 | `/admin` | User admin | Clerk `admin` role |
+| `/admin/reports` | Reports moderation dashboard | Clerk `admin` role |
 
 After sign-in, `RootLayout` calls **`GET /api/v1/me`** to provision the local DB user and resolve Clerk role.
 
@@ -141,7 +143,7 @@ Aligned with the API safety model:
 
 | Verdict | Typical meaning |
 |---------|-----------------|
-| `safe` | High safety % (≥ 85) |
+| `likely_safe` | High safety % (≥ 90) and no concrete concerns |
 | `low_risk` | Mostly fine (≥ 70) |
 | `moderate_risk` | Some concerns (≥ 50) |
 | `high_risk` | Low safety % (&lt; 50) |

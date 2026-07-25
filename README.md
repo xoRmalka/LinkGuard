@@ -10,11 +10,12 @@ LinkGuard helps you assess a URL **before you click**. Paste a link, run automat
 
 | Area | Description |
 |------|-------------|
-| **URL scan** | Normalize URL, run signal pipeline, return safety % + verdict + breakdown |
+| **URL scan** | Normalize URL, run 15-signal pipeline, return safety % + verdict + breakdown |
 | **Guest mode** | Scan without sign-in (3 requests per UTC day per IP) |
 | **Signed-in** | Saved scan history, favorites, report URL |
+| **Reports** | Flag a suspicious URL; admins review/resolve via the Reports dashboard (`/admin/reports`) |
 | **Auth** | [Clerk](https://clerk.com/) — optional; same app for client + API JWT |
-| **Admin** | User list, invites, roles via Clerk `public_metadata.role` |
+| **Admin** | User list, invites, roles via Clerk `public_metadata.role`; gated client-side by admin role |
 | **i18n** | EN / HE UI; Clerk components localized (`heIL` / `enUS`) |
 
 ---
@@ -111,12 +112,12 @@ Template with comments: [server/.env.example](server/.env.example)
 
 ## Safety scoring (summary)
 
-- **Score:** `0–100` = **% safe** (penalties subtracted from 100).
-- **Verdicts:** `safe` · `low_risk` · `moderate_risk` · `high_risk` · `dangerous` · `insufficient_data`
-- **Signals (current):** parse, domain age (RDAP), typosquatting, IP host, entropy, shorteners, Safe Browsing  
+- **Score:** `0–100` = **% safe** (penalties subtracted from 100, capped at **95%** — no automated check guarantees full safety).
+- **Verdicts:** `likely_safe` · `low_risk` · `moderate_risk` · `high_risk` · `dangerous` · `insufficient_data`
+- **Signals (current, 15):** parse, http scheme, URL length, suspicious port, userinfo, IP host, internal/private host, punycode, shorteners, typosquatting, suspicious TLD, suspicious subdomain (incl. brand impersonation), domain age (RDAP), entropy, Safe Browsing
 - **Removed:** direct SSL/TLS probe (security + false positives)
 
-Weights: `server/app/services/weights.json` (`2026-05-17-v4-safety`). Full rules: [plan.md](plan.md).
+Weights: `server/app/services/weights.json` (`2026-07-21-v6-conservative`). Full rules: [plan.md](plan.md).
 
 ---
 
@@ -147,12 +148,19 @@ Prefix: `/api/v1`
 | Method | Path | Auth |
 |--------|------|------|
 | `POST` | `/scans` | Optional (guest rate-limited) |
+| `GET` | `/scans/{id}` | User |
 | `GET` | `/me` | User — bootstrap + DB user row |
 | `GET` | `/me/scans` | User — history |
 | `GET` | `/favorites` | User |
 | `POST` | `/scans/{id}/favorite` | User |
 | `POST` | `/reports` | User |
+| `GET` | `/admin/reports` | Admin |
+| `PATCH` | `/admin/reports/{id}` | Admin |
+| `DELETE` | `/admin/reports/{id}` | Admin |
 | `GET` | `/admin/users` | Admin |
+| `PATCH` | `/admin/users/{id}` | Admin |
+| `POST` | `/admin/invites` | Admin |
+| `DELETE` | `/admin/users/{id}` | Admin |
 | `GET` | `/health` | Public |
 
 ---

@@ -77,3 +77,30 @@ def test_normalize_detects_deceptive_userinfo():
     assert r.has_userinfo
     assert r.host == "evil.com"
     assert r.normalized_url == "https://evil.com/"
+
+
+@pytest.mark.parametrize(
+    "raw",
+    [
+        "http://2130706433/admin",  # decimal
+        "http://0x7f000001/admin",  # hex
+        "http://0177.0.0.1/admin",  # octal first octet
+        "http://127.1/admin",  # shorthand (2-part)
+        "http://0x7f.0.0.1/admin",  # mixed hex/decimal octets
+    ],
+)
+def test_normalize_resolves_obfuscated_loopback_ip(raw):
+    r = normalize_url(raw)
+
+    assert r.ok
+    assert r.is_ip_host
+    assert r.host == "127.0.0.1"
+    assert r.host_display == "127.0.0.1"
+
+
+def test_normalize_still_rejects_non_numeric_host():
+    r = normalize_url("http://999.999.999.999/admin")
+
+    assert r.ok
+    assert not r.is_ip_host
+    assert r.host == "999.999.999.999"

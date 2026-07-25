@@ -1,3 +1,5 @@
+import pytest
+
 from app.services.signals.domain_utils import parse_domain
 from app.services.signals.suspicious_subdomain import suspicious_subdomain_signal
 from app.services.signals.typosquatting import typosquatting_signal
@@ -44,3 +46,23 @@ def test_typosquatting_does_not_fuzzy_match_short_generic_labels():
     result = typosquatting_signal("secure-login-paypal.com.xyz")
 
     assert result["concern"] is False
+
+
+@pytest.mark.parametrize(
+    ("host", "expected_brand"),
+    [
+        ("paypal.com.evil.xyz", "paypal"),
+        ("login.google.com.evil.com", "google"),
+    ],
+)
+def test_suspicious_subdomain_flags_brand_impersonation(host, expected_brand):
+    result = suspicious_subdomain_signal(host)
+
+    assert result["concern"] is True
+    assert result["brand_impersonation"] == [expected_brand]
+
+
+def test_suspicious_subdomain_does_not_flag_brands_first_party_subdomains():
+    for host in ("accounts.google.com", "login.microsoft.com", "checkout.paypal.com"):
+        result = suspicious_subdomain_signal(host)
+        assert result.get("brand_impersonation") is None

@@ -1,6 +1,6 @@
 import re
 
-from app.services.signals.domain_utils import parse_domain
+from app.services.signals.domain_utils import BRANDS, parse_domain
 
 # Suspicious keywords that shouldn't appear in legitimate domain names
 _SUSPICIOUS_KEYWORDS = frozenset({
@@ -17,26 +17,6 @@ _SUSPICIOUS_KEYWORDS = frozenset({
     "update", "suspend", "locked", "expired", "urgent",
     "alert", "warning", "limited",
 })
-
-_BRANDS = (
-    # Tech giants
-    "google", "facebook", "amazon", "microsoft", "apple",
-    # Social/messaging
-    "instagram", "whatsapp", "linkedin", "twitter", "tiktok",
-    "snapchat", "telegram", "discord", "slack", "zoom",
-    # Financial
-    "paypal", "chase", "wellsfargo", "bankofamerica", "citibank",
-    "capitalone", "americanexpress", "venmo", "cashapp",
-    # Streaming/entertainment
-    "netflix", "spotify", "hulu", "disney", "youtube",
-    # E-commerce/delivery
-    "ebay", "walmart", "target", "costco",
-    "dhl", "fedex", "ups", "usps",
-    # Cloud/productivity
-    "dropbox", "onedrive", "icloud",
-    # Ride sharing
-    "uber", "lyft",
-)
 
 
 def _levenshtein(a: str, b: str) -> int:
@@ -79,7 +59,7 @@ def typosquatting_signal(host: str) -> dict:
 
     best = None
     best_d = 99
-    for brand in _BRANDS:
+    for brand in BRANDS:
         if base == brand or base.endswith("." + brand):
             best_d = 0
             best = brand
