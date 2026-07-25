@@ -137,6 +137,45 @@ def test_scan_allows_legitimate_single_auth_subdomains(client, raw_url):
     assert payload["verdict"] in ("likely_safe", "low_risk")
 
 
+@pytest.mark.parametrize(
+    "raw_url",
+    [
+        "https://paypal.com.evil.xyz/login",
+        "https://login.google.com.evil.com/login",
+        "https://a.b.c.d.evil.com/login",
+    ],
+)
+def test_brand_impersonation_and_deep_subdomain_obfuscation_are_high_risk(client, raw_url):
+    response = _scan(client, raw_url)
+
+    assert response.status_code == 200
+    payload = response.get_json()
+    signals = _signals(payload)
+    assert signals["suspicious_subdomain"]["concern"] is True
+    assert payload["verdict"] == "high_risk"
+
+
+@pytest.mark.parametrize(
+    ("raw_url", "expected_host"),
+    [
+        ("http://2130706433/admin", "127.0.0.1"),
+        ("http://0x7f000001/admin", "127.0.0.1"),
+        ("http://0177.0.0.1/admin", "127.0.0.1"),
+        ("http://127.1/admin", "127.0.0.1"),
+    ],
+)
+def test_obfuscated_loopback_ip_is_resolved_and_high_risk(client, raw_url, expected_host):
+    response = _scan(client, raw_url)
+
+    assert response.status_code == 200
+    payload = response.get_json()
+    signals = _signals(payload)
+    assert payload["host"] == expected_host
+    assert payload["is_ip_host"] is True
+    assert signals["internal_host"]["concern"] is True
+    assert payload["verdict"] == "high_risk"
+
+
 def test_deceptive_userinfo_url_is_high_risk(client):
     response = _scan(client, "paypal.com@evil.com")
 

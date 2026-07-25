@@ -163,8 +163,14 @@ def aggregate_score(signals: list[dict], weights_version: str) -> dict[str, Any]
     if internal_host and internal_host.get("concern"):
         safety_score = min(safety_score, 45)
 
-    suspicious_tld = next((s for s in signals if s.get("id") == "suspicious_tld"), None)
+    # A suspicious subdomain pattern (brand impersonation, clustered phishing
+    # keywords, excessive depth) is a strong standalone signal on its own —
+    # it should not need an also-suspicious TLD to be forced into high_risk.
     suspicious_subdomain = next((s for s in signals if s.get("id") == "suspicious_subdomain"), None)
+    if suspicious_subdomain and suspicious_subdomain.get("concern"):
+        safety_score = min(safety_score, 45)
+
+    suspicious_tld = next((s for s in signals if s.get("id") == "suspicious_tld"), None)
     if (
         suspicious_tld and suspicious_tld.get("concern")
         and suspicious_subdomain and suspicious_subdomain.get("concern")

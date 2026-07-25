@@ -2,7 +2,7 @@
 
 import re
 
-from app.services.signals.domain_utils import parse_domain
+from app.services.signals.domain_utils import BRANDS, parse_domain
 
 # Keywords commonly used in phishing subdomains
 _SUSPICIOUS_KEYWORDS = frozenset({
@@ -42,6 +42,16 @@ def suspicious_subdomain_signal(host: str) -> dict:
     if len(subdomains) > 3:
         concerns.append(f"Unusually deep subdomain structure ({len(subdomains)} levels)")
 
+    # Check: a known brand name appears as a subdomain label of a domain
+    # that isn't actually owned by that brand, e.g. paypal.com.evil.xyz or
+    # login.google.com.evil.com. This is a highly realistic impersonation
+    # vector regardless of TLD, since the registrable domain is foreign.
+    brand_matches = sorted(brand for brand in BRANDS if brand in subdomains)
+    if brand_matches:
+        concerns.append(
+            f"Impersonates known brand(s) in subdomain of a foreign domain: {', '.join(brand_matches)}"
+        )
+
     # Check 2: clustered security-sensitive keywords in subdomains. A single
     # ordinary label such as login.microsoft.com is common and should not be
     # enough on its own to mark a legitimate domain as suspicious.
@@ -66,6 +76,7 @@ def suspicious_subdomain_signal(host: str) -> dict:
             "concern": True,
             "subdomain_depth": len(subdomains),
             "found_keywords": found_keywords[:5],
+            "brand_impersonation": brand_matches or None,
             "summary": "; ".join(concerns) + ".",
         }
 

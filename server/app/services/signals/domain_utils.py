@@ -28,6 +28,27 @@ _MULTI_LABEL_SUFFIXES = frozenset(
 )
 
 
+BRANDS = (
+    # Tech giants
+    "google", "facebook", "amazon", "microsoft", "apple",
+    # Social/messaging
+    "instagram", "whatsapp", "linkedin", "twitter", "tiktok",
+    "snapchat", "telegram", "discord", "slack", "zoom",
+    # Financial
+    "paypal", "chase", "wellsfargo", "bankofamerica", "citibank",
+    "capitalone", "americanexpress", "venmo", "cashapp",
+    # Streaming/entertainment
+    "netflix", "spotify", "hulu", "disney", "youtube",
+    # E-commerce/delivery
+    "ebay", "walmart", "target", "costco",
+    "dhl", "fedex", "ups", "usps",
+    # Cloud/productivity
+    "dropbox", "onedrive", "icloud",
+    # Ride sharing
+    "uber", "lyft",
+)
+
+
 @dataclass(frozen=True)
 class DomainParts:
     host: str
